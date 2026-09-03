@@ -196,7 +196,7 @@ ul {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: max(14px, env(safe-area-inset-top)) 16px 12px;
+  padding: max(22px, calc(env(safe-area-inset-top) + 8px)) 16px 12px;
   position: sticky;
   top: 0;
   z-index: 5;
@@ -724,6 +724,14 @@ ul {
   font-size: var(--text-footnote);
   color: var(--text-secondary);
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.thumb-row-subtitle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .thumb-row-subtitle .dot {
@@ -771,7 +779,9 @@ button.thumb-row:active {
 }
 
 .signin-body {
-  padding-top: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .signin-status {

@@ -229,6 +229,22 @@
     return formatDate(startIso) + " - " + formatDate(endIso);
   }
 
+  /* The Monday-to-Sunday calendar week containing the given ISO date,
+     as [mondayIso, sundayIso]. A week tile always shows this full
+     range rather than just the span between its first and last
+     scheduled workout, since a Tue/Thu/Sat-only week would otherwise
+     read like it starts and ends mid-week. */
+  function calendarWeekRange(iso) {
+    const date = new Date(iso + "T00:00:00Z");
+    const dayOfWeek = date.getUTCDay(); // 0 = Sunday, 1 = Monday, ...
+    const daysSinceMonday = (dayOfWeek + 6) % 7;
+    const monday = new Date(date.getTime());
+    monday.setUTCDate(monday.getUTCDate() - daysSinceMonday);
+    const sunday = new Date(monday.getTime());
+    sunday.setUTCDate(sunday.getUTCDate() + 6);
+    return [monday.toISOString().slice(0, 10), sunday.toISOString().slice(0, 10)];
+  }
+
   function formatDateTime(iso) {
     return dateTimeFormatter.format(new Date(iso));
   }
@@ -555,6 +571,7 @@
     "assets/photos/half-marathon/easy-run.webp": 30,
     "assets/photos/half-marathon/quality-run.webp": 15,
     "assets/photos/half-marathon/long-run.webp": 45,
+    "assets/photos/half-marathon/pool-swim.webp": 50,
   };
 
   function applyFocalY(img, focalY) {
@@ -582,9 +599,10 @@
     week.className = "workout-row-week";
     week.textContent = "Week " + weekGroup.week;
 
+    const [weekStart, weekEnd] = calendarWeekRange(weekGroup.workouts[0].date);
     const title = document.createElement("h2");
     title.className = "workout-row-title";
-    title.textContent = formatDateRange(weekGroup.workouts[0].date, weekGroup.workouts[weekGroup.workouts.length - 1].date);
+    title.textContent = formatDateRange(weekStart, weekEnd);
 
     const meta = document.createElement("div");
     meta.className = "workout-row-meta";
