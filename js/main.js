@@ -1180,6 +1180,7 @@
     document.getElementById("signinToggleBtn").textContent = isSignUp
       ? "Sign in to an existing account instead"
       : "Create an account instead";
+    document.getElementById("signinPasswordInput").autocomplete = isSignUp ? "new-password" : "current-password";
   }
 
   async function handleSigninSubmit() {
