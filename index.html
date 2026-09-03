@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Move Well</title>
+<meta name="description" content="Simple, guided home workouts.">
+
+<!-- Everything this app needs ships in the project itself (including
+     the self-hosted font), so the policy below allows no third-party
+     origins at all. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none';">
+
+<link rel="stylesheet" href="css/styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1114" media="(prefers-color-scheme: dark)">
+
+<!-- Home screen app behaviour on iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Move Well">
+<link rel="icon" href="assets/icons/favicon.ico" sizes="any">
+<link rel="icon" href="assets/icons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="icon" href="assets/icons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============================= HOME ============================= -->
+  <section class="screen is-active" data-screen="home" aria-label="Workouts">
+    <header class="toolbar">
+      <h1 class="toolbar-title">Move Well</h1>
+      <button type="button" class="icon-btn icon-btn--muted" id="openHistoryBtn" aria-label="History">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0-7 3.4M5 3v3.5H8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </header>
+    <div class="screen-body screen-body--flush">
+      <ul class="workout-list" id="workoutList"></ul>
+    </div>
+  </section>
+
+  <!-- ============================ DETAIL ============================ -->
+  <section class="screen" data-screen="detail" aria-label="Workout detail">
+    <div class="hero hero--detail">
+      <img class="hero-photo" id="detailCover" alt="">
+      <button type="button" class="hero-btn hero-btn--top-left" id="detailBackBtn" aria-label="Back to workouts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="screen-body detail-body">
+      <h1 class="detail-title" id="detailTitle"></h1>
+      <p class="detail-summary" id="detailSummary"></p>
+      <div class="detail-meta" id="detailMeta"></div>
+      <h2 class="section-heading">Exercises</h2>
+      <ul class="thumb-list" id="exerciseList"></ul>
+      <div class="detail-spacer" aria-hidden="true"></div>
+    </div>
+    <div class="sticky-action">
+      <button type="button" class="btn btn-primary btn-block" id="startWorkoutBtn">Start workout</button>
+    </div>
+  </section>
+
+  <!-- ============================ PLAYER ============================= -->
+  <section class="screen" data-screen="player" aria-label="Workout in progress">
+    <div class="hero hero--player">
+      <img class="hero-photo" id="playerPhoto" alt="">
+      <button type="button" class="hero-btn hero-btn--top-right" id="playerCloseBtn" aria-label="End workout">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="hero-overlay">
+        <h2 class="hero-overlay-title" id="playerExerciseName"></h2>
+      </div>
+    </div>
+    <div class="screen-body player-body">
+      <div class="segments" id="playerSegments" role="img" aria-label=""></div>
+      <div class="stats-row">
+        <span class="stats-row-label" id="playerProgressLabel"></span>
+        <span class="stats-row-timer" id="playerTimer" role="timer" aria-live="off">00:00</span>
+      </div>
+      <p class="chip" id="playerSetsReps"></p>
+      <p class="player-description" id="playerDescription"></p>
+      <p class="player-progression" id="playerProgression"></p>
+    </div>
+    <div class="sticky-action sticky-action--split">
+      <button type="button" class="btn btn-secondary btn-pill-back" id="playerBackBtn" aria-label="Previous exercise">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" class="btn btn-primary btn-block" id="playerNextBtn">Next exercise</button>
+    </div>
+  </section>
+
+  <!-- ============================ FINISH ============================= -->
+  <section class="screen" data-screen="finish" aria-label="Finish workout">
+    <header class="toolbar">
+      <h1 class="toolbar-title toolbar-title--center">Well done</h1>
+    </header>
+    <div class="screen-body finish-body">
+      <p class="finish-workout-name" id="finishWorkoutName"></p>
+      <div class="finish-stats">
+        <div class="finish-stat">
+          <span class="finish-stat-value" id="finishDuration"></span>
+          <span class="finish-stat-label">Duration</span>
+        </div>
+        <div class="finish-stat">
+          <span class="finish-stat-value" id="finishExerciseCount"></span>
+          <span class="finish-stat-label">Exercises</span>
+        </div>
+      </div>
+      <label class="field-label" for="notesInput">Notes (optional)</label>
+      <textarea class="field-textarea" id="notesInput" rows="4" placeholder="How did it feel? Anything to remember for next time?"></textarea>
+    </div>
+    <div class="sticky-action">
+      <button type="button" class="btn btn-primary btn-block" id="saveWorkoutBtn">Save and finish</button>
+    </div>
+  </section>
+
+  <!-- ============================ HISTORY ============================ -->
+  <section class="screen" data-screen="history" aria-label="History">
+    <header class="toolbar toolbar--back">
+      <button type="button" class="icon-btn" id="historyBackBtn" aria-label="Back to workouts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h1 class="toolbar-title toolbar-title--inline">History</h1>
+      <span class="toolbar-spacer" aria-hidden="true"></span>
+    </header>
+    <div class="screen-body">
+      <p class="save-banner" id="saveBanner" hidden>Workout saved</p>
+      <div class="empty-state" id="historyEmpty" hidden>
+        <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <p class="empty-title">No workouts logged yet</p>
+        <p class="empty-text">Completed workouts will appear here with the date, time and how long they took.</p>
+      </div>
+      <ul class="thumb-list" id="historyList"></ul>
+    </div>
+  </section>
+
+</div>
+
+<!-- ============================ DIALOGS ============================ -->
+
+<dialog class="app-dialog" id="exitDialog">
+  <form method="dialog" class="dialog-form">
+    <h2 class="dialog-title">End this workout?</h2>
+    <p class="dialog-text">Your progress for this session will not be saved.</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" id="exitCancelBtn">Cancel</button>
+      <button type="submit" class="btn btn-destructive" id="exitConfirmBtn" value="end">End workout</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="app-dialog" id="historyDetailDialog">
+  <form method="dialog" class="dialog-form">
+    <h2 class="dialog-title" id="historyDetailTitle"></h2>
+    <dl class="dialog-detail-list">
+      <div><dt>Date</dt><dd id="historyDetailDate"></dd></div>
+      <div><dt>Duration</dt><dd id="historyDetailDuration"></dd></div>
+    </dl>
+    <div class="dialog-notes" id="historyDetailNotesWrap">
+      <p class="field-label">Notes</p>
+      <p class="dialog-notes-text" id="historyDetailNotes"></p>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-destructive" id="historyDetailDeleteBtn">Delete</button>
+      <button type="submit" class="btn btn-secondary" value="close">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="app-dialog" id="deleteConfirmDialog">
+  <form method="dialog" class="dialog-form">
+    <h2 class="dialog-title">Delete this entry?</h2>
+    <p class="dialog-text">This cannot be undone.</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" id="deleteCancelBtn">Cancel</button>
+      <button type="submit" class="btn btn-destructive" id="deleteConfirmBtn" value="delete">Delete</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="js/workouts.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
