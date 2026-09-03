@@ -1042,12 +1042,11 @@
   /* ------------------------------------------------------------------
    * Sign in
    *
-   * Email + password is the primary method, with sign in/sign up
-   * toggled by the same form (signinMode tracks which). A magic-link
-   * fallback stays available for the one-time case of an account that
-   * was created before password auth existed and has no password set
-   * yet; once signed in that way, setPassword() below lets it adopt a
-   * password so it never needs the email round-trip again.
+   * Email + password is the only sign-in method, with sign in/sign up
+   * toggled by the same form (signinMode tracks which). Forgot
+   * Password sends a reset email; clicking that link brings the user
+   * back with a PASSWORD_RECOVERY auth event, which pops open the
+   * same Set Password dialog used to confirm the new one.
    * ---------------------------------------------------------------- */
 
   let signinMode = "signin";
@@ -1091,35 +1090,53 @@
     }
   }
 
-  async function handleSendMagicLinkFallback() {
+  async function handleForgotPassword() {
     const email = document.getElementById("signinEmailInput").value.trim();
     if (!email) {
       setSigninStatus("Enter your email first.", true);
       return;
     }
-    setSigninStatus("Sending link...", false);
+    setSigninStatus("Sending reset email...", false);
     try {
-      await sendMagicLink(email);
-      setSigninStatus("Check your email for a sign-in link.", false);
+      await sendPasswordReset(email);
+      setSigninStatus("Check your email for a password reset link.", false);
     } catch (err) {
-      setSigninStatus("Could not send the link. Please try again.", true);
+      setSigninStatus("Could not send the reset email. Please try again.", true);
     }
   }
 
-  async function handleSetPassword() {
-    const password = window.prompt("Set a password for your account:");
-    if (!password) return;
+  function setPasswordDialogStatus(message, isError) {
+    const status = document.getElementById("setPasswordStatus");
+    status.textContent = message;
+    status.hidden = !message;
+    status.classList.toggle("is-error", Boolean(isError));
+  }
+
+  async function handleSetPasswordConfirm() {
+    const input = document.getElementById("setPasswordInput");
+    const password = input.value;
+    if (!password) {
+      setPasswordDialogStatus("Enter a password first.", true);
+      return;
+    }
+    const confirmBtn = document.getElementById("setPasswordConfirmBtn");
+    confirmBtn.disabled = true;
+    setPasswordDialogStatus("Saving...", false);
     try {
       await setPassword(password);
-      window.alert("Password set. You can now sign in with email and password on any device.");
+      input.value = "";
+      setPasswordDialogStatus("", false);
+      document.getElementById("setPasswordDialog").close();
     } catch (err) {
-      window.alert("Could not set password: " + (err.message || err));
+      setPasswordDialogStatus("Could not set password. Please try again.", true);
+    } finally {
+      confirmBtn.disabled = false;
     }
   }
 
   /* Runs once there is a real session (either found on load, or just
-     signed in via the magic link redirect): loads this user's plans
-     and switches the nav stack over to Plans as the new root screen. */
+     signed in): loads this user's plans and switches the nav stack
+     over to Plans as the new root screen. */
   async function enterApp() {
     await loadPlansAndWorkouts();
     nav.stack = ["plans"];
@@ -1139,7 +1156,7 @@
       updateSigninModeUI();
       setSigninStatus("", false);
     });
-    document.getElementById("signinMagicLinkBtn").addEventListener("click", handleSendMagicLinkFallback);
+    document.getElementById("signinForgotBtn").addEventListener("click", handleForgotPassword);
 
     document.getElementById("signOutBtn").addEventListener("click", async () => {
       await signOut();
@@ -1148,7 +1165,9 @@
       nav.stack = ["signin"];
       showScreen("signin");
     });
-    document.getElementById("setPasswordBtn").addEventListener("click", handleSetPassword);
+    const setPasswordDialog = document.getElementById("setPasswordDialog");
+    document.getElementById("setPasswordCancelBtn").addEventListener("click", () => setPasswordDialog.close());
+    document.getElementById("setPasswordConfirmBtn").addEventListener("click", handleSetPasswordConfirm);
 
     document.getElementById("openTodayBtn").addEventListener("click", openToday);
     document.getElementById("openHistoryBtn").addEventListener("click", async () => {
@@ -1192,6 +1211,12 @@
     }
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        document.getElementById("setPasswordInput").value = "";
+        setPasswordDialogStatus("", false);
+        setPasswordDialog.showModal();
+        return;
+      }
       if (event === "SIGNED_IN" && nav.stack[0] !== "plans") {
         enterApp();
       }

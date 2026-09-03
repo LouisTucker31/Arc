@@ -25,6 +25,16 @@ async function signUpWithPassword(email, password) {
   }
 }
 
+async function sendPasswordReset(email) {
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href,
+  });
+  if (error) {
+    console.error("Could not send password reset email", error);
+    throw error;
+  }
+}
+
 async function setPassword(password) {
   const { error } = await supabaseClient.auth.updateUser({ password });
   if (error) {
