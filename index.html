@@ -150,6 +150,12 @@
     <div class="screen-body log-body">
       <p class="finish-workout-name" id="logWorkoutName"></p>
 
+      <label class="field-label" for="loggedDateInput">Date</label>
+      <div class="field-row">
+        <input class="field-input" type="date" id="loggedDateInput">
+        <input class="field-input" type="time" id="loggedTimeInput">
+      </div>
+
       <label class="field-label" for="paceInput">Pace</label>
       <input class="field-input" type="text" id="paceInput" placeholder="e.g. Easy, steady, 5:30/km">
 
@@ -249,5 +255,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/main.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch((err) => console.error("Service worker registration failed", err));
+    });
+  }
+</script>
 </body>
 </html>

@@ -838,11 +838,34 @@ button.thumb-row:active {
   border-radius: var(--radius-md);
   border: none;
   background: var(--bg-secondary);
+  color: var(--text-primary);
+  color-scheme: dark;
   margin-bottom: 18px;
+}
+
+.field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.field-row .field-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .field-input::placeholder {
   color: var(--text-tertiary);
+}
+
+/* WebKit tints an autofilled field's background yellow and ignores
+   background-color overrides entirely - the oversized inset shadow is
+   the only way to force our own fill colour back in. */
+.field-input:-webkit-autofill,
+.field-input:-webkit-autofill:hover,
+.field-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-secondary) inset;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 .field-textarea {

@@ -36,7 +36,17 @@ async function sendPasswordReset(email) {
 }
 
 async function updateHistoryEntry(id, fields) {
-  const { error } = await supabaseClient.from("workout_logs").update(fields).eq("id", id);
+  const { error } = await supabaseClient
+    .from("workout_logs")
+    .update({
+      logged_at: fields.loggedISO,
+      pace: fields.pace,
+      duration: fields.duration,
+      distance: fields.distance,
+      effort: fields.effort,
+      notes: fields.notes,
+    })
+    .eq("id", id);
   if (error) {
     console.error("Could not update workout log", error);
     throw error;

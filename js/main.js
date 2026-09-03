@@ -15,6 +15,85 @@
   let PLANS = [];
   let WORKOUTS = [];
 
+  /* ------------------------------------------------------------------
+   * Offline support
+   *
+   * Plans/workouts/history are mirrored into localStorage every time
+   * they load successfully, so the app still has something to show
+   * with no network. Logged workouts written while offline go into an
+   * outbox queue instead of failing, get merged into the rendered
+   * history immediately (optimistic), and are flushed to Supabase the
+   * next time the app detects a connection.
+   * ---------------------------------------------------------------- */
+
+  const CACHE_KEY_PLANS = "arc_cache_plans_v1";
+  const CACHE_KEY_WORKOUTS = "arc_cache_workouts_v1";
+  const CACHE_KEY_HISTORY = "arc_cache_history_v1";
+  const OUTBOX_KEY = "arc_outbox_v1";
+
+  function readCache(key) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function writeCache(key, value) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (err) {
+      // Storage full or unavailable (private browsing, etc) - offline
+      // caching is a nicety, so just skip it rather than throwing.
+    }
+  }
+
+  function readOutbox() {
+    return readCache(OUTBOX_KEY) || [];
+  }
+
+  function writeOutbox(entries) {
+    writeCache(OUTBOX_KEY, entries);
+  }
+
+  function queueOutboxEntry(entry) {
+    const queued = {
+      localId: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      workoutId: entry.workoutId,
+      pace: entry.pace,
+      duration: entry.duration,
+      distance: entry.distance,
+      effort: entry.effort,
+      notes: entry.notes,
+      loggedISO: entry.loggedISO || new Date().toISOString(),
+    };
+    const outbox = readOutbox();
+    outbox.push(queued);
+    writeOutbox(outbox);
+    return queued;
+  }
+
+  /* Tries to send every queued entry to Supabase, in order, stopping
+     at the first failure so a still-offline device doesn't churn
+     through retries; whatever succeeded is removed from the outbox. */
+  async function flushOutbox() {
+    const outbox = readOutbox();
+    if (outbox.length === 0) return;
+
+    const remaining = outbox.slice();
+    while (remaining.length > 0) {
+      const entry = remaining[0];
+      const savedId = await addHistoryEntry(entry);
+      if (!savedId) break;
+      remaining.shift();
+    }
+    writeOutbox(remaining);
+    if (remaining.length < outbox.length) {
+      await refreshHistoryData();
+    }
+  }
+
   function mapPlanRow(row) {
     return {
       id: row.id,
@@ -47,13 +126,15 @@
       .select("*, workouts(*)")
       .order("date", { foreignTable: "workouts", ascending: true });
     if (error) {
-      console.error("Could not load plans", error);
-      PLANS = [];
-      WORKOUTS = [];
+      console.error("Could not load plans, falling back to cache", error);
+      PLANS = readCache(CACHE_KEY_PLANS) || [];
+      WORKOUTS = readCache(CACHE_KEY_WORKOUTS) || [];
       return;
     }
     PLANS = data.map(mapPlanRow);
     WORKOUTS = data.flatMap((row) => (row.workouts || []).map(mapWorkoutRow));
+    writeCache(CACHE_KEY_PLANS, PLANS);
+    writeCache(CACHE_KEY_WORKOUTS, WORKOUTS);
   }
 
   function mapLogRow(row) {
@@ -69,16 +150,36 @@
     };
   }
 
+  /* Returns the queued outbox entries in the same shape loadHistory's
+     rows are mapped to, so they can be merged straight into the
+     rendered list while they wait to sync. */
+  function pendingHistoryEntries() {
+    return readOutbox().map((entry) => ({
+      id: entry.localId,
+      workoutId: entry.workoutId,
+      loggedISO: entry.loggedISO,
+      pace: entry.pace,
+      duration: entry.duration,
+      distance: entry.distance,
+      effort: entry.effort,
+      notes: entry.notes,
+      pendingSync: true,
+    }));
+  }
+
   async function loadHistory() {
     const { data, error } = await supabaseClient
       .from("workout_logs")
       .select("*")
       .order("logged_at", { ascending: false });
     if (error) {
-      console.error("Could not load history", error);
-      return [];
+      console.error("Could not load history, falling back to cache", error);
+      const cached = readCache(CACHE_KEY_HISTORY) || [];
+      return pendingHistoryEntries().concat(cached);
     }
-    return data.map(mapLogRow);
+    const synced = data.map(mapLogRow);
+    writeCache(CACHE_KEY_HISTORY, synced);
+    return pendingHistoryEntries().concat(synced);
   }
 
   async function addHistoryEntry(entry) {
@@ -86,6 +187,7 @@
       .from("workout_logs")
       .insert({
         workout_id: entry.workoutId,
+        logged_at: entry.loggedISO,
         pace: entry.pace,
         duration: entry.duration,
         distance: entry.distance,
@@ -95,13 +197,26 @@
       .select()
       .single();
     if (error) {
+      if (!navigator.onLine) return null;
       console.error("Could not save workout log", error);
       return null;
     }
     return data.id;
   }
 
+  function isPendingEntryId(id) {
+    return typeof id === "string" && id.startsWith("local-");
+  }
+
+  function removeOutboxEntry(localId) {
+    writeOutbox(readOutbox().filter((entry) => entry.localId !== localId));
+  }
+
   async function deleteHistoryEntry(id) {
+    if (isPendingEntryId(id)) {
+      removeOutboxEntry(id);
+      return;
+    }
     const { error } = await supabaseClient.from("workout_logs").delete().eq("id", id);
     if (error) console.error("Could not delete workout log", error);
   }
@@ -834,11 +949,34 @@
      logging a fresh workout from its Detail screen. */
   let editingEntryId = null;
 
+  /* Splits an ISO timestamp into the local date/time strings the two
+     native inputs expect ("YYYY-MM-DD" / "HH:MM"), using local time
+     (not UTC) so the fields show what the picker's clock actually
+     read at that moment. */
+  function setLoggedDateTimeInputs(iso) {
+    const date = iso ? new Date(iso) : new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    document.getElementById("loggedDateInput").value =
+      `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    document.getElementById("loggedTimeInput").value = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  /* Combines the two inputs back into an ISO timestamp. Falls back to
+     the current moment if either field is left empty. */
+  function readLoggedDateTimeInputs() {
+    const dateValue = document.getElementById("loggedDateInput").value;
+    const timeValue = document.getElementById("loggedTimeInput").value || "00:00";
+    if (!dateValue) return new Date().toISOString();
+    const local = new Date(`${dateValue}T${timeValue}:00`);
+    return Number.isNaN(local.getTime()) ? new Date().toISOString() : local.toISOString();
+  }
+
   function openLog() {
     if (!currentWorkout) return;
     editingEntryId = null;
     document.getElementById("logTitle").textContent = "Log workout";
     document.getElementById("logWorkoutName").textContent = currentWorkout.title;
+    setLoggedDateTimeInputs(null);
     document.getElementById("paceInput").value = "";
     document.getElementById("durationInput").value = "";
     document.getElementById("distanceInput").value = "";
@@ -857,6 +995,7 @@
     editingEntryId = entry.id;
     document.getElementById("logTitle").textContent = "Edit workout";
     document.getElementById("logWorkoutName").textContent = workout ? workout.title : "Workout";
+    setLoggedDateTimeInputs(entry.loggedISO);
     document.getElementById("paceInput").value = entry.pace || "";
     document.getElementById("durationInput").value = entry.duration || "";
     document.getElementById("distanceInput").value = entry.distance || "";
@@ -900,6 +1039,7 @@
   async function handleSaveWorkout() {
     if (!editingEntryId && !currentWorkout) return;
     const fields = {
+      loggedISO: readLoggedDateTimeInputs(),
       pace: document.getElementById("paceInput").value.trim(),
       duration: document.getElementById("durationInput").value.trim(),
       distance: document.getElementById("distanceInput").value.trim(),
@@ -908,18 +1048,32 @@
     };
 
     const wasEditing = Boolean(editingEntryId);
-    if (editingEntryId) {
+    let queuedOffline = false;
+    if (editingEntryId && isPendingEntryId(editingEntryId)) {
+      const outbox = readOutbox();
+      const queued = outbox.find((entry) => entry.localId === editingEntryId);
+      if (queued) Object.assign(queued, fields);
+      writeOutbox(outbox);
+      lastSavedEntryId = editingEntryId;
+    } else if (editingEntryId) {
       await updateHistoryEntry(editingEntryId, fields);
       lastSavedEntryId = editingEntryId;
     } else {
-      lastSavedEntryId = await addHistoryEntry(Object.assign({ workoutId: currentWorkout.id }, fields));
+      const newEntry = Object.assign({ workoutId: currentWorkout.id }, fields);
+      const savedId = await addHistoryEntry(newEntry);
+      if (savedId) {
+        lastSavedEntryId = savedId;
+      } else if (!navigator.onLine) {
+        lastSavedEntryId = queueOutboxEntry(newEntry).localId;
+        queuedOffline = true;
+      }
     }
     editingEntryId = null;
 
     nav.stack = ["plans", "history"];
     await renderHistory();
     showScreen("history");
-    showSaveBanner(wasEditing ? "Changes saved" : "Workout saved");
+    showSaveBanner(queuedOffline ? "Saved offline - will sync later" : wasEditing ? "Changes saved" : "Workout saved");
   }
 
   let saveBannerTimeout = null;
@@ -997,6 +1151,7 @@
     if (workout) subtitleParts.push("Week " + workout.week);
     subtitleParts.push(formatDateTime(entry.loggedISO));
     if (entry.effort) subtitleParts.push("Effort " + entry.effort + "/10");
+    if (entry.pendingSync) subtitleParts.push("Pending sync");
     buildSubtitle(subtitle, subtitleParts);
     text.append(title, subtitle);
     if (entry.notes) {
@@ -1257,6 +1412,7 @@
      over to Plans as the new root screen. */
   async function enterApp() {
     await loadPlansAndWorkouts();
+    if (navigator.onLine) await flushOutbox();
     await refreshHistoryData();
     nav.stack = ["plans"];
     renderPlans();
@@ -1290,6 +1446,11 @@
     const setPasswordDialog = document.getElementById("setPasswordDialog");
     document.getElementById("setPasswordCancelBtn").addEventListener("click", () => setPasswordDialog.close());
     document.getElementById("setPasswordConfirmBtn").addEventListener("click", handleSetPasswordConfirm);
+
+    window.addEventListener("online", async () => {
+      await flushOutbox();
+      if (nav.stack[nav.stack.length - 1] === "history") await renderHistory();
+    });
 
     document.getElementById("openTodayBtn").addEventListener("click", openToday);
     document.getElementById("openHistoryBtn").addEventListener("click", async () => {
