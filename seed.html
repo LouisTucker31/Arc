@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<title>Training Arc - one-off seed</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://vumsggojkacntpzhprqh.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none';">
+<style>
+  body { font-family: system-ui, sans-serif; background: #0a0d13; color: #e8ebf1; padding: 24px; max-width: 640px; margin: 0 auto; }
+  button { font-size: 16px; padding: 10px 20px; cursor: pointer; }
+  pre { white-space: pre-wrap; background: #151a24; padding: 12px; border-radius: 8px; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Training Arc: one-off Supabase seed</h1>
+<p>Inserts the Olympic Triathlon Plan (1 plan, 60 workouts) into your Supabase tables under the currently signed-in anonymous user. Safe to run only once per user; running it twice creates duplicate rows since there is no uniqueness check.</p>
+<button id="runBtn" type="button">Run seed</button>
+<pre id="log"></pre>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/workouts.js"></script>
+<script>
+  const logEl = document.getElementById("log");
+  function log(line) {
+    logEl.textContent += line + "\n";
+  }
+
+  document.getElementById("runBtn").addEventListener("click", async () => {
+    document.getElementById("runBtn").disabled = true;
+    try {
+      log("Signing in...");
+      const session = await ensureSignedIn();
+      log("Signed in as " + session.user.id);
+
+      const plan = PLANS[0];
+
+      const { data: existing, error: existingError } = await supabaseClient
+        .from("plans")
+        .select("id")
+        .eq("title", plan.title)
+        .limit(1);
+      if (existingError) throw existingError;
+      if (existing.length > 0) {
+        log("A plan titled '" + plan.title + "' already exists (id " + existing[0].id + "). Skipping to avoid duplicates.");
+        return;
+      }
+
+      log("Inserting plan: " + plan.title);
+      const { data: planRow, error: planError } = await supabaseClient
+        .from("plans")
+        .insert({
+          title: plan.title,
+          cover_url: plan.cover,
+          estimate_weeks: plan.estimateWeeks,
+        })
+        .select()
+        .single();
+      if (planError) throw planError;
+      log("Plan inserted with id " + planRow.id);
+
+      const workoutRows = WORKOUTS.map((w) => ({
+        plan_id: planRow.id,
+        title: w.title,
+        week: w.week,
+        date: w.date,
+        phase: w.phase,
+        summary: w.summary,
+        session: w.session || null,
+        cover_url: w.cover,
+        estimate_minutes: w.estimateMinutes,
+        discipline: w.discipline || null,
+      }));
+
+      log("Inserting " + workoutRows.length + " workouts...");
+      const { error: workoutsError } = await supabaseClient.from("workouts").insert(workoutRows);
+      if (workoutsError) throw workoutsError;
+
+      log("Done. Plan and " + workoutRows.length + " workouts are in Supabase.");
+    } catch (err) {
+      log("Failed: " + (err.message || err));
+      console.error(err);
+    }
+  });
+</script>
+</body>
+</html>

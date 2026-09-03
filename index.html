@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Training Arc</title>
+<meta name="description" content="A training plan and workout log.">
+
+<!-- Everything this app needs ships in the project itself (including
+     the self-hosted font), so the policy below allows no third-party
+     origins at all. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; font-src 'self'; connect-src 'self' https://vumsggojkacntpzhprqh.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none';">
+
+<link rel="stylesheet" href="css/styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0d13">
+
+<!-- Home screen app behaviour on iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Arc">
+<link rel="icon" href="assets/icons/favicon.ico" sizes="any">
+<link rel="icon" href="assets/icons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="icon" href="assets/icons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============================= PLANS ============================= -->
+  <section class="screen is-active" data-screen="plans" aria-label="Training plans">
+    <header class="toolbar">
+      <h1 class="toolbar-title">Training Arc</h1>
+      <div class="toolbar-actions">
+        <button type="button" class="icon-btn icon-btn--muted" id="openTodayBtn" aria-label="Today's workout">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 9.5h16M8 3.5v3.5M16 3.5v3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="14.5" r="2" fill="currentColor"/></svg>
+        </button>
+        <button type="button" class="icon-btn icon-btn--muted" id="openHistoryBtn" aria-label="History">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0-7 3.4M5 3v3.5H8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="screen-body screen-body--flush">
+      <div class="plan-current-slot" id="currentPlanSlot"></div>
+      <ul class="workout-row-list workout-row-list--thin plan-other-list" id="otherPlanList"></ul>
+    </div>
+  </section>
+
+  <!-- ============================ LIBRARY ============================ -->
+  <section class="screen" data-screen="library" aria-label="Workout library">
+    <header class="toolbar toolbar--back">
+      <button type="button" class="icon-btn" id="libraryBackBtn" aria-label="Back to training plans">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h1 class="toolbar-title toolbar-title--inline" id="libraryPlanTitle">Workouts</h1>
+      <span class="toolbar-spacer" aria-hidden="true"></span>
+    </header>
+    <div class="screen-body">
+      <ul class="workout-row-list" id="weekList"></ul>
+    </div>
+  </section>
+
+  <!-- ============================= WEEK =============================== -->
+  <section class="screen" data-screen="week" aria-label="Week workouts">
+    <header class="toolbar toolbar--back">
+      <button type="button" class="icon-btn" id="weekBackBtn" aria-label="Back to workout library">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h1 class="toolbar-title toolbar-title--inline" id="weekTitle">Week</h1>
+      <span class="toolbar-spacer" aria-hidden="true"></span>
+    </header>
+    <div class="screen-body">
+      <ul class="workout-row-list workout-row-list--thin" id="weekWorkoutList"></ul>
+    </div>
+  </section>
+
+  <!-- ============================ DETAIL ============================ -->
+  <section class="screen" data-screen="detail" aria-label="Workout summary">
+    <div class="hero hero--detail">
+      <img class="hero-photo" id="detailCover" alt="">
+      <button type="button" class="hero-btn hero-btn--top-left" id="detailBackBtn" aria-label="Back to workouts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="screen-body detail-body">
+      <h1 class="detail-title" id="detailTitle"></h1>
+      <p class="detail-summary" id="detailSummary"></p>
+      <div class="detail-meta" id="detailMeta"></div>
+      <div class="detail-target" id="detailTarget" hidden></div>
+      <div id="detailBody"></div>
+      <div class="detail-spacer" aria-hidden="true"></div>
+    </div>
+    <div class="sticky-action">
+      <button type="button" class="btn btn-primary btn-block" id="completeWorkoutBtn">Complete</button>
+    </div>
+  </section>
+
+  <!-- =========================== REST DAY ============================ -->
+  <section class="screen" data-screen="rest" aria-label="Rest day">
+    <div class="hero hero--detail">
+      <img class="hero-photo" id="restCover" alt="">
+      <button type="button" class="hero-btn hero-btn--top-left" id="restBackBtn" aria-label="Back to workouts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="screen-body detail-body">
+      <h1 class="detail-title">Rest Day</h1>
+      <p class="detail-summary" id="restSummary">Nothing scheduled today. Recovery is part of the training, here's what to focus on instead.</p>
+      <h2 class="section-heading">Recovery checklist</h2>
+      <ul class="thumb-list" id="restTipList"></ul>
+      <div class="detail-spacer" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- ============================== LOG =============================== -->
+  <section class="screen" data-screen="log" aria-label="Log workout">
+    <header class="toolbar toolbar--back">
+      <button type="button" class="icon-btn" id="logBackBtn" aria-label="Back to workout summary">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h1 class="toolbar-title toolbar-title--inline">Log workout</h1>
+      <span class="toolbar-spacer" aria-hidden="true"></span>
+    </header>
+    <div class="screen-body log-body">
+      <p class="finish-workout-name" id="logWorkoutName"></p>
+
+      <label class="field-label" for="paceInput">Pace</label>
+      <input class="field-input" type="text" id="paceInput" placeholder="e.g. Easy, steady, 5:30/km">
+
+      <label class="field-label" for="durationInput">Duration</label>
+      <input class="field-input" type="text" id="durationInput" placeholder="e.g. 35 min">
+
+      <label class="field-label" for="distanceInput">Distance</label>
+      <input class="field-input" type="text" id="distanceInput" placeholder="e.g. 5 km">
+
+      <fieldset class="effort-fieldset">
+        <legend class="field-label">Effort</legend>
+        <div class="effort-group" id="effortGroup"></div>
+      </fieldset>
+
+      <label class="field-label" for="notesInput">Notes (optional)</label>
+      <textarea class="field-textarea" id="notesInput" rows="4" placeholder="How did it feel? Anything to remember for next time?"></textarea>
+    </div>
+    <div class="sticky-action">
+      <button type="button" class="btn btn-primary btn-block" id="saveWorkoutBtn">Log workout</button>
+    </div>
+  </section>
+
+  <!-- ============================ HISTORY ============================ -->
+  <section class="screen" data-screen="history" aria-label="History">
+    <header class="toolbar toolbar--back">
+      <button type="button" class="icon-btn" id="historyBackBtn" aria-label="Back to training plans">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h1 class="toolbar-title toolbar-title--inline">History</h1>
+      <span class="toolbar-spacer" aria-hidden="true"></span>
+    </header>
+    <div class="screen-body">
+      <p class="save-banner" id="saveBanner" hidden>Workout saved</p>
+      <div class="empty-state" id="historyEmpty" hidden>
+        <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <p class="empty-title">No workouts logged yet</p>
+        <p class="empty-text">Completed workouts will appear here with the date, time and how long they took.</p>
+      </div>
+      <ul class="thumb-list" id="historyList"></ul>
+    </div>
+  </section>
+
+</div>
+
+<!-- ============================ DIALOGS ============================ -->
+
+<dialog class="app-dialog" id="historyDetailDialog">
+  <form method="dialog" class="dialog-form">
+    <h2 class="dialog-title" id="historyDetailTitle"></h2>
+    <dl class="dialog-detail-list">
+      <div><dt>Week</dt><dd id="historyDetailWeek"></dd></div>
+      <div><dt>Date</dt><dd id="historyDetailDate"></dd></div>
+      <div><dt>Duration</dt><dd id="historyDetailDuration"></dd></div>
+      <div><dt>Distance</dt><dd id="historyDetailDistance"></dd></div>
+      <div><dt>Pace</dt><dd id="historyDetailPace"></dd></div>
+      <div><dt>Effort</dt><dd id="historyDetailEffort"></dd></div>
+    </dl>
+    <div class="dialog-notes" id="historyDetailNotesWrap">
+      <p class="field-label">Notes</p>
+      <p class="dialog-notes-text" id="historyDetailNotes"></p>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-destructive" id="historyDetailDeleteBtn">Delete</button>
+      <button type="submit" class="btn btn-secondary" value="close">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="app-dialog" id="deleteConfirmDialog">
+  <form method="dialog" class="dialog-form">
+    <h2 class="dialog-title">Delete this entry?</h2>
+    <p class="dialog-text">This cannot be undone.</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" id="deleteCancelBtn">Cancel</button>
+      <button type="submit" class="btn btn-destructive" id="deleteConfirmBtn" value="delete">Delete</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

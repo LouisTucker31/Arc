@@ -1,0 +1,991 @@
+/* ==========================================================================
+   Training Arc: design tokens
+   ========================================================================== */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("../assets/fonts/inter-latin-variable.woff2") format("woff2-variations");
+}
+
+:root {
+  /* Type. Inter is self-hosted as a single variable file (see
+     assets/fonts) covering weights 400-800, so the app keeps working
+     fully offline; the system stack is the fallback while it loads
+     and on the rare device where the file fails to load. */
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --text-large-title: clamp(1.75rem, 1.55rem + 1vw, 2rem);
+  --text-title-1: 1.75rem;
+  --text-title-2: 1.375rem;
+  --text-title-3: 1.25rem;
+  --text-headline: 1.0625rem;
+  --text-body: 1.0625rem;
+  --text-callout: 1rem;
+  --text-subheadline: 0.9375rem;
+  --text-footnote: 0.8125rem;
+  --text-caption: 0.75rem;
+
+  /* Dark, near-black canvas with a cold blue undertone rather than a
+     neutral gray, deliberately not pure black, so surfaces still
+     read as layered. Navy accent throughout instead of the previous
+     warm rose. This is the only appearance the app ships now; it is
+     not conditioned on prefers-color-scheme. */
+  --bg-primary: #0a0d13;
+  --bg-secondary: #141a24;
+  --bg-elevated: #171e2a;
+  --fill-raised: #232c3b;
+  --text-primary: #eef1f7;
+  --text-secondary: rgba(238, 241, 247, 0.62);
+  --text-tertiary: rgba(238, 241, 247, 0.34);
+  --separator: rgba(238, 241, 247, 0.12);
+  --accent: #6d8bfa;
+  --accent-soft: rgba(109, 139, 250, 0.16);
+  --accent-strong: #2f49ad;
+  --accent-strong-pressed: #24397f;
+  --destructive: #ff6b5e;
+  --destructive-soft: rgba(255, 107, 94, 0.14);
+  --success: #4fc98a;
+  --success-soft: rgba(79, 201, 138, 0.14);
+  --scrim: rgba(0, 0, 0, 0.6);
+
+  /* Radius tokens: tighter than a rounded, friendly UI calls for, in
+     keeping with a sharper, more instrumented feel. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-capsule: 999px;
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+  }
+}
+
+/* ==========================================================================
+   Reset and base
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  line-height: 1.45;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+  touch-action: manipulation;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+input,
+textarea {
+  font-size: max(16px, var(--text-body));
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+h1, h2, h3, p, dl, dd {
+  margin: 0;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   App shell and screens
+   ========================================================================== */
+
+#app {
+  position: relative;
+  min-height: 100dvh;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--bg-primary);
+}
+
+.screen.is-active {
+  display: flex;
+}
+
+.screen-body {
+  flex: 1 1 auto;
+  padding: 18px 16px 32px;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.screen-body--flush {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (min-width: 720px) {
+  .screen-body {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .screen-body--flush {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+/* ==========================================================================
+   Toolbar
+   ========================================================================== */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: max(14px, env(safe-area-inset-top)) 16px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg-primary);
+}
+
+.toolbar-title {
+  font-size: var(--text-large-title);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.toolbar-title--inline {
+  font-size: var(--text-title-2);
+  font-weight: 800;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-title--center {
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+.toolbar--back {
+  justify-content: flex-start;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  border-radius: var(--radius-capsule);
+  flex: 0 0 auto;
+}
+
+.icon-btn--muted {
+  color: var(--text-primary);
+  background: var(--fill-raised);
+}
+
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.icon-btn:active {
+  background: var(--separator);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.btn {
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: var(--radius-capsule);
+  font-size: var(--text-headline);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-primary {
+  background: var(--accent-strong);
+  color: #ffffff;
+}
+
+.btn-primary:active {
+  background: var(--accent-strong-pressed);
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.btn-secondary:active {
+  background: var(--separator);
+}
+
+.btn-destructive {
+  background: var(--destructive-soft);
+  color: var(--destructive);
+}
+
+.btn-destructive:active {
+  transform: scale(0.98);
+}
+
+.sticky-action {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px max(14px, env(safe-area-inset-bottom));
+  background: var(--bg-primary);
+}
+
+.sticky-action > .btn-block {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+}
+
+/* ==========================================================================
+   Home screen: workout tiles
+   ========================================================================== */
+
+.plan-current-slot {
+  padding: 0 16px;
+}
+
+.plan-other-list {
+  padding: 20px 16px 0;
+}
+
+@media (min-width: 720px) {
+  .plan-current-slot {
+    padding: 0;
+  }
+
+  .plan-other-list {
+    padding: 20px 0 0;
+  }
+}
+
+.workout-tile {
+  display: block;
+  width: 100%;
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.workout-tile-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.workout-tile-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 32px 16px 16px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
+  text-align: left;
+}
+
+.workout-tile-title {
+  font-size: var(--text-title-1);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.workout-tile-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-subheadline);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.workout-tile-meta .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.workout-tile:active .workout-tile-photo {
+  transform: scale(1.02);
+}
+
+/* ==========================================================================
+   Library screen: full-width workout rows, separated by a small week
+   label rather than arranged in a square grid.
+   ========================================================================== */
+
+.workout-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.workout-row {
+  display: block;
+  width: 100%;
+  position: relative;
+  height: 128px;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.workout-row-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--photo-position, center);
+  display: block;
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.workout-row:active .workout-row-photo {
+  transform: scale(1.02);
+}
+
+.workout-row-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 14px 18px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.68) 0%, rgba(0, 0, 0, 0.32) 65%, rgba(0, 0, 0, 0.12) 100%);
+  text-align: left;
+}
+
+.workout-row-week {
+  font-size: var(--text-caption);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.workout-row-title {
+  font-size: var(--text-title-3);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.workout-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.workout-row-meta .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.workout-row-phase {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  background: rgba(10, 13, 19, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 5px 10px;
+  border-radius: var(--radius-capsule);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .workout-row-phase {
+    background: rgba(10, 13, 19, 0.8);
+  }
+}
+
+/* Week screen reuses the same row component at a shorter height, since
+   it lists individual workouts within a single week rather than whole
+   weeks within a plan. */
+
+.workout-row-list--thin {
+  gap: 12px;
+}
+
+.workout-row--thin {
+  height: 108px;
+}
+
+.workout-row--thin .workout-row-overlay {
+  padding: 12px 18px;
+  gap: 3px;
+}
+
+/* ==========================================================================
+   Hero photo (detail): full width, touches the top of the screen, with
+   a back button floating on top of the image itself.
+   ========================================================================== */
+
+.hero {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  aspect-ratio: 4 / 5;
+  max-height: 56vh;
+  flex: 0 0 auto;
+  background: var(--bg-secondary);
+}
+
+.hero--detail {
+  aspect-ratio: 1 / 1;
+  max-height: 640px;
+}
+
+.hero-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--photo-position, center);
+}
+
+.hero-btn {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  width: 40px;
+  height: 40px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-capsule);
+  background: rgba(20, 14, 16, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .hero-btn {
+    background: rgba(20, 14, 16, 0.6);
+  }
+}
+
+.hero-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hero-btn:active {
+  background: rgba(20, 14, 16, 0.6);
+}
+
+.hero-btn--top-left {
+  left: 14px;
+}
+
+/* ==========================================================================
+   Detail screen
+   ========================================================================== */
+
+.detail-body {
+  padding-top: 20px;
+}
+
+.detail-title {
+  font-size: var(--text-title-1);
+  font-weight: 800;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.detail-summary {
+  font-size: var(--text-body);
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.detail-meta {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.detail-meta-item {
+  font-size: var(--text-footnote);
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 7px 14px;
+  border-radius: var(--radius-capsule);
+}
+
+.detail-target {
+  margin-bottom: 20px;
+}
+
+.detail-target-value {
+  font-size: var(--text-title-3);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.section-heading {
+  font-size: var(--text-title-3);
+  font-weight: 800;
+  margin: 4px 2px 12px;
+}
+
+.detail-session {
+  font-size: var(--text-body);
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+
+.detail-structure-block {
+  margin-bottom: 16px;
+}
+
+.detail-structure-block:last-child {
+  margin-bottom: 0;
+}
+
+.detail-subheading {
+  font-size: var(--text-headline);
+  font-weight: 800;
+  margin: 0 2px 4px;
+}
+
+.detail-spacer {
+  height: 76px;
+}
+
+/* ==========================================================================
+   List-view rows (exercise list + history), thumbnail + text
+   ========================================================================== */
+
+.thumb-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.thumb-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+.thumb-list li:last-child .thumb-row {
+  border-bottom: none;
+}
+
+.thumb-row-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex: 0 0 auto;
+  background: var(--bg-secondary);
+}
+
+.thumb-row-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thumb-row-title {
+  font-size: var(--text-callout);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumb-row-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-footnote);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.thumb-row-subtitle .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.thumb-row-notes {
+  font-size: var(--text-footnote);
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumb-row-chevron {
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+  flex: 0 0 auto;
+}
+
+button.thumb-row:active {
+  background: var(--bg-secondary);
+}
+
+.thumb-row.is-new {
+  animation: highlight-row 1600ms var(--ease-standard);
+}
+
+@keyframes highlight-row {
+  0% { background: var(--accent-soft); }
+  100% { background: transparent; }
+}
+
+/* ==========================================================================
+   Log screen
+   ========================================================================== */
+
+.log-body {
+  padding-top: 16px;
+}
+
+.finish-workout-name {
+  font-size: var(--text-title-2);
+  font-weight: 800;
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+}
+
+.field-label {
+  display: block;
+  font-size: var(--text-subheadline);
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.field-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--bg-secondary);
+  margin-bottom: 18px;
+}
+
+.field-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.field-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--bg-secondary);
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.field-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.effort-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 18px;
+}
+
+.effort-fieldset legend {
+  padding: 0;
+}
+
+.effort-group {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.effort-btn {
+  position: relative;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: var(--text-callout);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.effort-btn:active {
+  transform: scale(0.96);
+}
+
+.effort-btn-input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.effort-btn:has(.effort-btn-input:checked) {
+  background: var(--accent-strong);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   History screen
+   ========================================================================== */
+
+.save-banner {
+  background: var(--success-soft);
+  color: var(--success);
+  font-weight: 700;
+  font-size: var(--text-subheadline);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  animation: fade-in var(--duration-base) var(--ease-standard);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 56px 24px;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--text-tertiary);
+  margin: 0 auto 14px;
+}
+
+.empty-title {
+  font-size: var(--text-headline);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.empty-text {
+  font-size: var(--text-subheadline);
+  max-width: 32ch;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   Dialogs
+   ========================================================================== */
+
+.app-dialog {
+  border: none;
+  padding: 0;
+  width: min(400px, calc(100vw - 40px));
+  border-radius: var(--radius-xl);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.app-dialog::backdrop {
+  background: var(--scrim);
+}
+
+.dialog-form {
+  padding: 20px 20px max(18px, env(safe-area-inset-bottom));
+}
+
+.dialog-title {
+  font-size: var(--text-title-3);
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.dialog-text {
+  font-size: var(--text-subheadline);
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.dialog-actions .btn {
+  flex: 1 1 0;
+}
+
+.dialog-detail-list {
+  margin-bottom: 4px;
+}
+
+.dialog-detail-list > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-top: 1px solid var(--separator);
+  font-size: var(--text-subheadline);
+}
+
+.dialog-detail-list > div:first-child {
+  border-top: none;
+}
+
+.dialog-detail-list dt {
+  color: var(--text-secondary);
+}
+
+.dialog-detail-list dd {
+  font-weight: 700;
+}
+
+.dialog-notes {
+  margin: 12px 0 18px;
+}
+
+.dialog-notes-text {
+  font-size: var(--text-subheadline);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
