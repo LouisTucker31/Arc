@@ -262,11 +262,17 @@
   const nav = { stack: ["signin"] };
   const LAST_SCREEN_KEY = "trainingArc.lastScreen.v1";
 
-  function showScreen(name) {
+  /* Scroll position per screen name, so going back restores where you
+     were (e.g. scrolled partway down a week list) instead of always
+     resetting to the top. Only meaningful within the current session,
+     the same as the rest of the in-memory nav stack. */
+  const scrollPositions = {};
+
+  function showScreen(name, scrollY) {
     document.querySelectorAll(".screen").forEach((el) => {
       el.classList.toggle("is-active", el.dataset.screen === name);
     });
-    window.scrollTo(0, 0);
+    window.scrollTo(0, scrollY || 0);
     try {
       window.sessionStorage.setItem(LAST_SCREEN_KEY, name);
     } catch (err) {
@@ -274,17 +280,36 @@
       // contexts). Reload-persistence is a nicety, never worth crashing
       // navigation over.
     }
+    // Re-arms the history trap on every screen change (not just after
+    // a popstate), so there is always exactly one trap entry between
+    // the user and real prior history. Without this, an edge-swipe
+    // back gesture on iOS can burn through the single trap entry
+    // pushed at startup and land on whatever page came before the app
+    // loaded, instead of stepping back through in-app screens.
+    armHistoryTrap();
+  }
+
+  /* Records the currently-visible screen's scroll position before
+     leaving it, so goBack() can restore it later. Called at the start
+     of both goTo() and goBack(), while the outgoing screen is still
+     on top of the stack. */
+  function saveCurrentScrollPosition() {
+    const activeName = nav.stack[nav.stack.length - 1];
+    if (activeName) scrollPositions[activeName] = window.scrollY;
   }
 
   function goTo(name) {
+    saveCurrentScrollPosition();
     nav.stack.push(name);
     showScreen(name);
   }
 
   function goBack() {
     if (nav.stack.length > 1) {
+      saveCurrentScrollPosition();
       nav.stack.pop();
-      showScreen(nav.stack[nav.stack.length - 1]);
+      const name = nav.stack[nav.stack.length - 1];
+      showScreen(name, scrollPositions[name]);
     }
   }
 
@@ -292,7 +317,7 @@
     // Some embedding contexts (and the file:// origin used by local
     // testing tools) refuse history.pushState outright. That should
     // never take down the rest of the app, since the trap is only a
-    // nicety for the Android back gesture.
+    // nicety for the Android back gesture and iOS edge-swipe-back.
     try {
       history.pushState({ trainingArcTrap: true }, "", location.href);
     } catch (err) {
@@ -456,8 +481,11 @@
     const plan = findPlan(id);
     if (!plan) return;
     currentPlan = plan;
-    renderLibrary(plan);
+    const currentWeekRow = renderLibrary(plan);
     goTo("library");
+    if (currentWeekRow) {
+      currentWeekRow.scrollIntoView({ block: "center" });
+    }
   }
 
   /* ------------------------------------------------------------------
@@ -476,13 +504,49 @@
       .map(([week, weekWorkouts]) => ({ week, workouts: weekWorkouts }));
   }
 
+  /* The week whose date range contains today, or (if today falls
+     outside every week, e.g. before the plan starts or after it
+     ends) whichever week is closest to today. Used to scroll the
+     Library screen to the relevant week on open, so the list still
+     reads top-to-bottom in plan order rather than being reordered. */
+  function currentWeekGroup(weekGroups) {
+    const today = todayIso();
+    let closest = null;
+    let closestDistance = Infinity;
+
+    weekGroups.forEach((weekGroup) => {
+      const start = weekGroup.workouts[0].date;
+      const end = weekGroup.workouts[weekGroup.workouts.length - 1].date;
+      if (today >= start && today <= end) {
+        closest = weekGroup;
+        closestDistance = 0;
+        return;
+      }
+      const distance = today < start
+        ? new Date(start) - new Date(today)
+        : new Date(today) - new Date(end);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closest = weekGroup;
+      }
+    });
+
+    return closest;
+  }
+
   function renderLibrary(plan) {
     document.getElementById("libraryPlanTitle").textContent = plan.title;
     const list = document.getElementById("weekList");
     list.innerHTML = "";
-    weeksForPlan(plan.id).forEach((weekGroup) => {
-      list.appendChild(buildWeekRow(weekGroup));
+    const weekGroups = weeksForPlan(plan.id);
+    const current = currentWeekGroup(weekGroups);
+    let currentRow = null;
+    weekGroups.forEach((weekGroup) => {
+      const row = buildWeekRow(weekGroup);
+      if (weekGroup === current) currentRow = row;
+      list.appendChild(row);
     });
+    return currentRow;
   }
 
   /* The first workout of the week carries the dedicated week-banner
@@ -554,9 +618,12 @@
     const workoutWord = weekGroup.workouts.length === 1 ? "workout" : "workouts";
     buildSubtitle(meta, [weekGroup.workouts.length + " " + workoutWord]);
 
+    const lastWorkoutDate = weekGroup.workouts[weekGroup.workouts.length - 1].date;
+    const isWeekDone = todayIso() > lastWorkoutDate;
+
     const phase = document.createElement("span");
     phase.className = "workout-row-phase";
-    phase.textContent = weekGroup.workouts[0].phase;
+    phase.textContent = isWeekDone ? "Done" : weekGroup.workouts[0].phase;
 
     overlay.append(week, title, meta);
     btn.append(img, overlay, phase);
@@ -615,6 +682,14 @@
 
     overlay.append(day, title, meta);
     btn.append(img, overlay);
+
+    if (loggedWorkoutIds.has(workout.id)) {
+      const badge = document.createElement("span");
+      badge.className = "workout-row-phase";
+      badge.textContent = "Logged";
+      btn.appendChild(badge);
+    }
+
     btn.addEventListener("click", () => openDetail(workout.id));
     li.appendChild(btn);
     return li;
@@ -855,9 +930,18 @@
 
   let lastSavedEntryId = null;
   let historyEntries = [];
+  let loggedWorkoutIds = new Set();
+
+  /* Refreshes both the History screen's own list and the set of
+     logged workout ids that the Week/Library screens use to show a
+     workout as done, so the two never drift out of sync. */
+  async function refreshHistoryData() {
+    historyEntries = await loadHistory();
+    loggedWorkoutIds = new Set(historyEntries.map((entry) => entry.workoutId));
+  }
 
   async function renderHistory() {
-    historyEntries = await loadHistory();
+    await refreshHistoryData();
     const listEl = document.getElementById("historyList");
     const emptyEl = document.getElementById("historyEmpty");
     listEl.innerHTML = "";
@@ -1154,6 +1238,7 @@
      over to Plans as the new root screen. */
   async function enterApp() {
     await loadPlansAndWorkouts();
+    await refreshHistoryData();
     nav.stack = ["plans"];
     renderPlans();
     showScreen("plans");
@@ -1216,10 +1301,7 @@
       historyDetailId = null;
     });
 
-    window.addEventListener("popstate", () => {
-      armHistoryTrap();
-      goBack();
-    });
+    window.addEventListener("popstate", goBack);
 
     armHistoryTrap();
 
