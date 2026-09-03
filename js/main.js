@@ -1226,6 +1226,8 @@
     const session = await getCurrentSession();
     if (session) {
       await enterApp();
+    } else {
+      showScreen("signin");
     }
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
