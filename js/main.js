@@ -258,7 +258,7 @@
    * can react to, rather than closing the installed app outright.
    * ---------------------------------------------------------------- */
 
-  const nav = { stack: ["plans"] };
+  const nav = { stack: ["signin"] };
   const LAST_SCREEN_KEY = "trainingArc.lastScreen.v1";
 
   function showScreen(name) {
@@ -1039,9 +1039,66 @@
     }
   }
 
+  /* ------------------------------------------------------------------
+   * Sign in
+   *
+   * A magic link email is the only auth method: the user enters their
+   * email, Supabase sends a one-time link, and clicking it reloads the
+   * app with a real session already active. There is no separate
+   * "logged out" screen to design around, since signInWithOtp() covers
+   * both first-time sign-up and every later sign-in the same way.
+   * ---------------------------------------------------------------- */
+
+  function setSigninStatus(message, isError) {
+    const status = document.getElementById("signinStatus");
+    status.textContent = message;
+    status.hidden = !message;
+    status.classList.toggle("is-error", Boolean(isError));
+  }
+
+  async function handleSendMagicLink() {
+    const emailInput = document.getElementById("signinEmailInput");
+    const email = emailInput.value.trim();
+    if (!email) {
+      setSigninStatus("Enter your email first.", true);
+      return;
+    }
+    const sendBtn = document.getElementById("signinSendBtn");
+    sendBtn.disabled = true;
+    setSigninStatus("Sending link...", false);
+    try {
+      await sendMagicLink(email);
+      setSigninStatus("Check your email for a sign-in link.", false);
+    } catch (err) {
+      setSigninStatus("Could not send the link. Please try again.", true);
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  /* Runs once there is a real session (either found on load, or just
+     signed in via the magic link redirect): loads this user's plans
+     and switches the nav stack over to Plans as the new root screen. */
+  async function enterApp() {
+    await loadPlansAndWorkouts();
+    nav.stack = ["plans"];
+    renderPlans();
+    showScreen("plans");
+    await restoreLastScreen();
+  }
+
   async function init() {
     const historyDetailDialog = document.getElementById("historyDetailDialog");
     const deleteConfirmDialog = document.getElementById("deleteConfirmDialog");
+
+    document.getElementById("signinSendBtn").addEventListener("click", handleSendMagicLink);
+    document.getElementById("signOutBtn").addEventListener("click", async () => {
+      await signOut();
+      PLANS = [];
+      WORKOUTS = [];
+      nav.stack = ["signin"];
+      showScreen("signin");
+    });
 
     document.getElementById("openTodayBtn").addEventListener("click", openToday);
     document.getElementById("openHistoryBtn").addEventListener("click", async () => {
@@ -1077,12 +1134,18 @@
       goBack();
     });
 
-    await ensureSignedIn();
-    await loadPlansAndWorkouts();
-
-    renderPlans();
     armHistoryTrap();
-    await restoreLastScreen();
+
+    const session = await getCurrentSession();
+    if (session) {
+      await enterApp();
+    }
+
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && nav.stack[0] !== "plans") {
+        enterApp();
+      }
+    });
   }
 
   document.addEventListener("DOMContentLoaded", init);

@@ -6,9 +6,12 @@ function log(line) {
 document.getElementById("runBtn").addEventListener("click", async () => {
   document.getElementById("runBtn").disabled = true;
   try {
-    log("Signing in...");
-    const session = await ensureSignedIn();
-    log("Signed in as " + session.user.id);
+    const session = await getCurrentSession();
+    if (!session) {
+      log("Not signed in. Open index.html in this same browser, sign in with your magic link, then come back here.");
+      return;
+    }
+    log("Signed in as " + session.user.email);
 
     const plan = PLANS[0];
 

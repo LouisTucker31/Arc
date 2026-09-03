@@ -13,7 +13,7 @@
 </head>
 <body>
 <h1>Training Arc: one-off Supabase seed</h1>
-<p>Inserts the Olympic Triathlon Plan (1 plan, 60 workouts) into your Supabase tables under the currently signed-in anonymous user. Safe to run only once per user; running it twice creates duplicate rows since there is no uniqueness check.</p>
+<p>Inserts the Olympic Triathlon Plan (1 plan, 60 workouts) into your Supabase tables under whichever account is currently signed in. Open this in the same browser you just signed into the main app with, so it reuses that session. Safe to run only once per account; running it twice creates duplicate rows since there is no uniqueness check beyond the plan title.</p>
 <button id="runBtn" type="button">Run seed</button>
 <pre id="log"></pre>
 

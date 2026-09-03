@@ -770,6 +770,20 @@ button.thumb-row:active {
   padding-top: 16px;
 }
 
+.signin-body {
+  padding-top: 48px;
+}
+
+.signin-status {
+  font-size: var(--text-subheadline);
+  color: var(--text-secondary);
+  margin: -6px 0 18px;
+}
+
+.signin-status.is-error {
+  color: var(--destructive);
+}
+
 .finish-workout-name {
   font-size: var(--text-title-2);
   font-weight: 800;

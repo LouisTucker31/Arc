@@ -4,13 +4,23 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-async function ensureSignedIn() {
+async function getCurrentSession() {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) return session;
-  const { data, error } = await supabaseClient.auth.signInAnonymously();
+  return session;
+}
+
+async function sendMagicLink(email) {
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email: email,
+    options: { emailRedirectTo: window.location.href },
+  });
   if (error) {
-    console.error("Anonymous sign-in failed", error);
+    console.error("Could not send magic link", error);
     throw error;
   }
-  return data.session;
+}
+
+async function signOut() {
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) console.error("Sign out failed", error);
 }
