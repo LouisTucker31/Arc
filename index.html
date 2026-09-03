@@ -58,8 +58,8 @@
         <button type="button" class="icon-btn icon-btn--muted" id="openTodayBtn" aria-label="Today's workout">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 9.5h16M8 3.5v3.5M16 3.5v3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="14.5" r="2" fill="currentColor"/></svg>
         </button>
-        <button type="button" class="icon-btn icon-btn--muted" id="openHistoryBtn" aria-label="History">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0-7 3.4M5 3v3.5H8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <button type="button" class="icon-btn icon-btn--muted" id="openCalendarBtn" aria-label="Calendar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 9.5h16M8 3.5v3.5M16 3.5v3.5M4 14h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 14v6.5M14.5 14v6.5" stroke="currentColor" stroke-width="1.8"/></svg>
         </button>
         <button type="button" class="icon-btn icon-btn--muted" id="signOutBtn" aria-label="Sign out">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5M21 12H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -178,23 +178,43 @@
     </div>
   </section>
 
-  <!-- ============================ HISTORY ============================ -->
-  <section class="screen" data-screen="history" aria-label="History">
+  <!-- =========================== CALENDAR ============================ -->
+  <section class="screen" data-screen="calendar" aria-label="Calendar">
     <header class="toolbar toolbar--back">
-      <button type="button" class="icon-btn" id="historyBackBtn" aria-label="Back to training plans">
+      <button type="button" class="icon-btn" id="calendarBackBtn" aria-label="Back to training plans">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <h1 class="toolbar-title toolbar-title--inline">History</h1>
+      <h1 class="toolbar-title toolbar-title--inline">Calendar</h1>
       <span class="toolbar-spacer" aria-hidden="true"></span>
     </header>
     <div class="screen-body">
       <p class="save-banner" id="saveBanner" hidden></p>
-      <div class="empty-state" id="historyEmpty" hidden>
-        <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        <p class="empty-title">No workouts logged yet</p>
-        <p class="empty-text">Completed workouts will appear here with the date, time and how long they took.</p>
+
+      <div class="calendar-month-nav">
+        <button type="button" class="icon-btn" id="calendarPrevMonthBtn" aria-label="Previous month">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <h2 class="calendar-month-title" id="calendarMonthTitle"></h2>
+        <button type="button" class="icon-btn" id="calendarNextMonthBtn" aria-label="Next month">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
-      <ul class="thumb-list" id="historyList"></ul>
+
+      <div class="calendar-weekday-row">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+
+      <div class="calendar-legend">
+        <span class="calendar-legend-item"><span class="calendar-dot calendar-dot--scheduled"></span>Scheduled</span>
+        <span class="calendar-legend-item"><span class="calendar-dot calendar-dot--logged"></span>Logged</span>
+      </div>
+
+      <h3 class="section-heading" id="calendarDayTitle"></h3>
+      <div class="empty-state" id="calendarDayEmpty" hidden>
+        <p class="empty-text">Nothing scheduled or logged this day.</p>
+      </div>
+      <ul class="thumb-list" id="calendarDayList"></ul>
     </div>
   </section>
 

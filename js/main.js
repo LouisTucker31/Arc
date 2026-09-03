@@ -1070,9 +1070,11 @@
     }
     editingEntryId = null;
 
-    nav.stack = ["plans", "history"];
-    await renderHistory();
-    showScreen("history");
+    selectedCalendarDate = localDateIso(new Date(fields.loggedISO));
+    calendarMonthCursor = { year: new Date(fields.loggedISO).getFullYear(), month: new Date(fields.loggedISO).getMonth() };
+    nav.stack = ["plans", "calendar"];
+    await renderCalendar();
+    showScreen("calendar");
     showSaveBanner(queuedOffline ? "Saved offline - will sync later" : wasEditing ? "Changes saved" : "Workout saved");
   }
 
@@ -1089,14 +1091,25 @@
   }
 
   /* ------------------------------------------------------------------
-   * History screen
+   * Calendar screen
+   *
+   * A month grid is the only way to browse past/logged workouts now
+   * (there is no separate flat History list any more). Each day cell
+   * carries two independent markers - a "scheduled" dot sourced from
+   * WORKOUTS, and a "logged" dot sourced from historyEntries - since a
+   * day can have either, both or neither and that distinction is the
+   * whole point of the view. Selecting a day filters the list below
+   * the grid to that day's scheduled workout (if any) and logged
+   * entries (if any).
    * ---------------------------------------------------------------- */
 
   let lastSavedEntryId = null;
   let historyEntries = [];
   let loggedWorkoutIds = new Set();
+  let calendarMonthCursor = null; // { year, month } (month is 0-indexed)
+  let selectedCalendarDate = null; // "YYYY-MM-DD"
 
-  /* Refreshes both the History screen's own list and the set of
+  /* Refreshes both the Calendar screen's own data and the set of
      logged workout ids that the Week/Library screens use to show a
      workout as done, so the two never drift out of sync. */
   async function refreshHistoryData() {
@@ -1104,26 +1117,168 @@
     loggedWorkoutIds = new Set(historyEntries.map((entry) => entry.workoutId));
   }
 
-  async function renderHistory() {
+  /* Same local-time convention as todayIso(): the calendar groups a
+     logged entry onto the day its device clock actually read, not its
+     UTC date, so a late-evening log doesn't jump to the next day. */
+  function localDateIso(date) {
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return date.getFullYear() + "-" + month + "-" + day;
+  }
+
+  function historyEntriesForDate(iso) {
+    return historyEntries.filter((entry) => localDateIso(new Date(entry.loggedISO)) === iso);
+  }
+
+  const MONTH_FORMATTER = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
+
+  async function renderCalendar() {
     await refreshHistoryData();
-    const listEl = document.getElementById("historyList");
-    const emptyEl = document.getElementById("historyEmpty");
+    if (!calendarMonthCursor) {
+      const today = new Date();
+      calendarMonthCursor = { year: today.getFullYear(), month: today.getMonth() };
+    }
+    if (!selectedCalendarDate) selectedCalendarDate = todayIso();
+    renderCalendarGrid();
+    renderCalendarDayList();
+  }
+
+  function renderCalendarGrid() {
+    const { year, month } = calendarMonthCursor;
+    document.getElementById("calendarMonthTitle").textContent = MONTH_FORMATTER.format(new Date(year, month, 1));
+
+    const gridEl = document.getElementById("calendarGrid");
+    gridEl.innerHTML = "";
+
+    const firstOfMonth = new Date(year, month, 1);
+    const leadingBlanks = (firstOfMonth.getDay() + 6) % 7; // Monday-first grid
+    const gridStart = new Date(year, month, 1 - leadingBlanks);
+
+    for (let i = 0; i < 42; i++) {
+      const cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      const cellIso = localDateIso(cellDate);
+      gridEl.appendChild(buildCalendarDayCell(cellDate, cellIso, cellDate.getMonth() === month));
+    }
+  }
+
+  function buildCalendarDayCell(cellDate, cellIso, inCurrentMonth) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "calendar-day";
+    if (!inCurrentMonth) btn.classList.add("is-outside-month");
+    if (cellIso === todayIso()) btn.classList.add("is-today");
+    if (cellIso === selectedCalendarDate) btn.classList.add("is-selected");
+
+    const label = document.createElement("span");
+    label.className = "calendar-day-number";
+    label.textContent = String(cellDate.getDate());
+    btn.appendChild(label);
+
+    const dots = document.createElement("span");
+    dots.className = "calendar-day-dots";
+    if (workoutForDate(cellIso)) {
+      const dot = document.createElement("span");
+      dot.className = "calendar-dot calendar-dot--scheduled";
+      dots.appendChild(dot);
+    }
+    if (historyEntriesForDate(cellIso).length > 0) {
+      const dot = document.createElement("span");
+      dot.className = "calendar-dot calendar-dot--logged";
+      dots.appendChild(dot);
+    }
+    btn.appendChild(dots);
+
+    btn.addEventListener("click", () => {
+      selectedCalendarDate = cellIso;
+      if (cellDate.getMonth() !== calendarMonthCursor.month || cellDate.getFullYear() !== calendarMonthCursor.year) {
+        calendarMonthCursor = { year: cellDate.getFullYear(), month: cellDate.getMonth() };
+      }
+      renderCalendarGrid();
+      renderCalendarDayList();
+    });
+
+    return btn;
+  }
+
+  function changeCalendarMonth(delta) {
+    const { year, month } = calendarMonthCursor;
+    const next = new Date(year, month + delta, 1);
+    calendarMonthCursor = { year: next.getFullYear(), month: next.getMonth() };
+    renderCalendarGrid();
+  }
+
+  function renderCalendarDayList() {
+    const titleEl = document.getElementById("calendarDayTitle");
+    const listEl = document.getElementById("calendarDayList");
+    const emptyEl = document.getElementById("calendarDayEmpty");
+    titleEl.textContent = formatDate(selectedCalendarDate);
     listEl.innerHTML = "";
 
-    if (historyEntries.length === 0) {
+    const scheduled = workoutForDate(selectedCalendarDate);
+    const logged = historyEntriesForDate(selectedCalendarDate);
+
+    if (!scheduled && logged.length === 0) {
       emptyEl.hidden = false;
       listEl.hidden = true;
-      lastSavedEntryId = null;
       return;
     }
-
     emptyEl.hidden = true;
     listEl.hidden = false;
 
-    historyEntries.forEach((entry) => {
-      listEl.appendChild(buildHistoryRow(entry));
-    });
-    lastSavedEntryId = null;
+    if (scheduled) listEl.appendChild(buildScheduledDayRow(scheduled));
+    logged.forEach((entry) => listEl.appendChild(buildHistoryRow(entry)));
+  }
+
+  /* A scheduled-but-not-yet-logged workout is still worth surfacing on
+     its day (it's the "what was I supposed to do" half of the view),
+     so it gets its own row that opens the normal Detail/Log flow
+     rather than only ever showing entries that already exist. */
+  function buildScheduledDayRow(workout) {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "thumb-row";
+
+    const photo = document.createElement("img");
+    photo.className = "thumb-row-photo";
+    photo.src = workout.cover;
+    photo.alt = "";
+    photo.loading = "lazy";
+
+    const text = document.createElement("div");
+    text.className = "thumb-row-text";
+    const title = document.createElement("span");
+    title.className = "thumb-row-title";
+    title.textContent = workout.title;
+    const subtitle = document.createElement("span");
+    subtitle.className = "thumb-row-subtitle";
+    buildSubtitle(subtitle, [
+      "Week " + workout.week,
+      loggedWorkoutIds.has(workout.id) ? "Scheduled - logged" : "Scheduled - not logged",
+    ]);
+    text.append(title, subtitle);
+
+    const chevron = buildChevron();
+    btn.append(photo, text, chevron);
+    btn.addEventListener("click", () => openDetail(workout.id));
+    li.appendChild(btn);
+    return li;
+  }
+
+  function buildChevron() {
+    const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    chevron.setAttribute("class", "thumb-row-chevron");
+    chevron.setAttribute("viewBox", "0 0 24 24");
+    chevron.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M9 5l7 7-7 7");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "currentColor");
+    path.setAttribute("stroke-width", "2");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+    chevron.appendChild(path);
+    return chevron;
   }
 
   function buildHistoryRow(entry) {
@@ -1161,19 +1316,7 @@
       text.appendChild(notes);
     }
 
-    const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    chevron.setAttribute("class", "thumb-row-chevron");
-    chevron.setAttribute("viewBox", "0 0 24 24");
-    chevron.setAttribute("aria-hidden", "true");
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", "M9 5l7 7-7 7");
-    path.setAttribute("fill", "none");
-    path.setAttribute("stroke", "currentColor");
-    path.setAttribute("stroke-width", "2");
-    path.setAttribute("stroke-linecap", "round");
-    path.setAttribute("stroke-linejoin", "round");
-    chevron.appendChild(path);
-
+    const chevron = buildChevron();
     btn.append(photo, text, chevron);
     btn.addEventListener("click", () => openHistoryDetail(entry.id));
     li.appendChild(btn);
@@ -1211,7 +1354,7 @@
    * ---------------------------------------------------------------- */
 
   /* Reload persistence only covers what can be cheaply and correctly
-     rebuilt from a bare screen name: Plans (the default) and History
+     rebuilt from a bare screen name: Plans (the default) and Calendar
      (no selection state needed). Detail/Log/Week all depend on
      in-memory selection (currentWorkout/a weekGroup) that a reload
      discards, so those fall back to Library (one level in from Plans)
@@ -1228,9 +1371,9 @@
     }
     if (!lastScreen || lastScreen === "plans") return;
 
-    if (lastScreen === "history") {
-      await renderHistory();
-      goTo("history");
+    if (lastScreen === "calendar") {
+      await renderCalendar();
+      goTo("calendar");
       return;
     }
     if (lastScreen === "library" || lastScreen === "week" || lastScreen === "detail" || lastScreen === "log") {
@@ -1449,20 +1592,22 @@
 
     window.addEventListener("online", async () => {
       await flushOutbox();
-      if (nav.stack[nav.stack.length - 1] === "history") await renderHistory();
+      if (nav.stack[nav.stack.length - 1] === "calendar") await renderCalendar();
     });
 
     document.getElementById("openTodayBtn").addEventListener("click", openToday);
-    document.getElementById("openHistoryBtn").addEventListener("click", async () => {
-      await renderHistory();
-      goTo("history");
+    document.getElementById("openCalendarBtn").addEventListener("click", async () => {
+      await renderCalendar();
+      goTo("calendar");
     });
+    document.getElementById("calendarPrevMonthBtn").addEventListener("click", () => changeCalendarMonth(-1));
+    document.getElementById("calendarNextMonthBtn").addEventListener("click", () => changeCalendarMonth(1));
     document.getElementById("libraryBackBtn").addEventListener("click", goBack);
     document.getElementById("weekBackBtn").addEventListener("click", goBack);
     document.getElementById("detailBackBtn").addEventListener("click", goBack);
     document.getElementById("logBackBtn").addEventListener("click", goBack);
     document.getElementById("restBackBtn").addEventListener("click", goBack);
-    document.getElementById("historyBackBtn").addEventListener("click", goBack);
+    document.getElementById("calendarBackBtn").addEventListener("click", goBack);
 
     document.getElementById("completeWorkoutBtn").addEventListener("click", openLog);
     document.getElementById("saveWorkoutBtn").addEventListener("click", handleSaveWorkout);
@@ -1481,7 +1626,7 @@
     deleteConfirmDialog.addEventListener("close", async () => {
       if (deleteConfirmDialog.returnValue === "delete" && historyDetailId) {
         await deleteHistoryEntry(historyDetailId);
-        await renderHistory();
+        await renderCalendar();
       }
       deleteConfirmDialog.returnValue = "";
       historyDetailId = null;

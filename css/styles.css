@@ -645,6 +645,104 @@ ul {
   margin: 4px 2px 12px;
 }
 
+/* ==========================================================================
+   Calendar
+   ========================================================================== */
+
+.calendar-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.calendar-month-title {
+  font-size: var(--text-title-3);
+  font-weight: 800;
+}
+
+.calendar-weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.calendar-weekday-row span {
+  text-align: center;
+  font-size: var(--text-footnote);
+  font-weight: 700;
+  color: var(--text-tertiary);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 6px;
+  border-radius: var(--radius-sm);
+  background: none;
+}
+
+.calendar-day.is-outside-month {
+  opacity: 0.35;
+}
+
+.calendar-day.is-today .calendar-day-number {
+  color: var(--accent);
+}
+
+.calendar-day.is-selected {
+  background: var(--fill-raised);
+}
+
+.calendar-day-number {
+  font-size: var(--text-footnote);
+  font-weight: 700;
+}
+
+.calendar-day-dots {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+}
+
+.calendar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.calendar-dot--scheduled {
+  background: var(--text-tertiary);
+}
+
+.calendar-dot--logged {
+  background: var(--accent);
+}
+
+.calendar-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.calendar-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-footnote);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 .detail-session {
   font-size: var(--text-body);
   color: var(--text-primary);
