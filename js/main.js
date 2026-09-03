@@ -35,6 +35,7 @@
       summary: row.summary,
       session: row.session,
       cover: row.cover_url,
+      weekCover: row.week_cover_url,
       estimateMinutes: row.estimate_minutes,
       discipline: row.discipline,
     };
@@ -484,11 +485,12 @@
     });
   }
 
-  /* There is no dedicated week-banner photo in the data model, so a
-     week row reuses the cover of whichever workout is first that
-     week (already ordered by date via workoutsForPlan). */
+  /* The first workout of the week carries the dedicated week-banner
+     photo (weekCover), set once per week rather than per workout.
+     Falls back to that workout's own cover if a week has none set. */
   function weekCover(weekGroup) {
-    return weekGroup.workouts[0].cover;
+    const first = weekGroup.workouts[0];
+    return first.weekCover || first.cover;
   }
 
   /* Source photos frame their subject at different heights, so a
@@ -504,6 +506,18 @@
     "assets/photos/olympic-triathlon/quality-bike.webp": 20,
     "assets/photos/olympic-triathlon/brick-session.webp": 30,
     "assets/photos/olympic-triathlon/race-day.webp": 35,
+    "assets/photos/olympic-triathlon/olympic-week-1.webp": 30,
+    "assets/photos/olympic-triathlon/olympic-week-2.webp": 45,
+    "assets/photos/olympic-triathlon/olympic-week-3.webp": 35,
+    "assets/photos/olympic-triathlon/olympic-week-4.webp": 50,
+    "assets/photos/olympic-triathlon/olympic-week-5.webp": 50,
+    "assets/photos/olympic-triathlon/olympic-week-6.webp": 30,
+    "assets/photos/olympic-triathlon/olympic-week-7.webp": 45,
+    "assets/photos/olympic-triathlon/olympic-week-8.webp": 40,
+    "assets/photos/olympic-triathlon/olympic-week-9.webp": 25,
+    "assets/photos/olympic-triathlon/olympic-week-10.webp": 40,
+    "assets/photos/olympic-triathlon/olympic-week-11.webp": 25,
+    "assets/photos/olympic-triathlon/olympic-week-12.webp": 30,
   };
 
   function applyFocalY(img, focalY) {
@@ -1082,6 +1096,7 @@
         setSigninStatus("Account created. Check your email to confirm, then sign in.", false);
       } else {
         await signInWithPassword(email, password);
+        setSigninStatus("", false);
       }
     } catch (err) {
       setSigninStatus("Could not sign in. Check your email and password.", true);
@@ -1162,6 +1177,9 @@
       await signOut();
       PLANS = [];
       WORKOUTS = [];
+      document.getElementById("signinEmailInput").value = "";
+      document.getElementById("signinPasswordInput").value = "";
+      setSigninStatus("", false);
       nav.stack = ["signin"];
       showScreen("signin");
     });
