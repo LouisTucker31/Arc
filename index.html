@@ -191,11 +191,11 @@
       <p class="save-banner" id="saveBanner" hidden></p>
 
       <div class="calendar-month-nav">
-        <button type="button" class="icon-btn" id="calendarPrevMonthBtn" aria-label="Previous month">
+        <button type="button" class="icon-btn icon-btn--muted" id="calendarPrevMonthBtn" aria-label="Previous month">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <h2 class="calendar-month-title" id="calendarMonthTitle"></h2>
-        <button type="button" class="icon-btn" id="calendarNextMonthBtn" aria-label="Next month">
+        <button type="button" class="icon-btn icon-btn--muted" id="calendarNextMonthBtn" aria-label="Next month">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
@@ -210,11 +210,13 @@
         <span class="calendar-legend-item"><span class="calendar-dot calendar-dot--logged"></span>Logged</span>
       </div>
 
-      <h3 class="section-heading" id="calendarDayTitle"></h3>
-      <div class="empty-state" id="calendarDayEmpty" hidden>
-        <p class="empty-text">Nothing scheduled or logged this day.</p>
+      <div class="calendar-day-card">
+        <h3 class="section-heading" id="calendarDayTitle"></h3>
+        <div class="empty-state" id="calendarDayEmpty" hidden>
+          <p class="empty-text">Nothing scheduled or logged this day.</p>
+        </div>
+        <ul class="thumb-list" id="calendarDayList"></ul>
       </div>
-      <ul class="thumb-list" id="calendarDayList"></ul>
     </div>
   </section>
 

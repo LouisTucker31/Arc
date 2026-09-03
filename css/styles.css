@@ -695,12 +695,14 @@ ul {
   opacity: 0.35;
 }
 
-.calendar-day.is-today .calendar-day-number {
-  color: var(--accent);
+.calendar-day.is-today {
+  background: var(--fill-raised);
 }
 
 .calendar-day.is-selected {
   background: var(--fill-raised);
+  outline: 1.5px solid var(--text-tertiary);
+  outline-offset: -1.5px;
 }
 
 .calendar-day-number {
@@ -741,6 +743,28 @@ ul {
   font-size: var(--text-footnote);
   color: var(--text-secondary);
   font-weight: 600;
+}
+
+/* Contains the day title + list/empty-state in its own card so a
+   quiet day (one row, or none) reads as a small complete card rather
+   than a list floating in the leftover vertical space that .screen's
+   min-height: 100dvh otherwise leaves beneath it. */
+.calendar-day-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.calendar-day-card .section-heading {
+  margin: 0 0 10px;
+}
+
+.calendar-day-card .empty-state {
+  padding: 20px 8px;
+}
+
+.calendar-day-card .thumb-list li:last-child .thumb-row {
+  padding-bottom: 0;
 }
 
 .detail-session {
