@@ -9,13 +9,26 @@ async function getCurrentSession() {
   return session;
 }
 
-async function sendMagicLink(email) {
-  const { error } = await supabaseClient.auth.signInWithOtp({
-    email: email,
-    options: { emailRedirectTo: window.location.href },
-  });
+async function signInWithPassword(email, password) {
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) {
-    console.error("Could not send magic link", error);
+    console.error("Sign in failed", error);
+    throw error;
+  }
+}
+
+async function signUpWithPassword(email, password) {
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+  if (error) {
+    console.error("Sign up failed", error);
+    throw error;
+  }
+}
+
+async function setPassword(password) {
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  if (error) {
+    console.error("Could not set password", error);
     throw error;
   }
 }

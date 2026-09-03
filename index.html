@@ -32,15 +32,20 @@
   <!-- ============================ SIGN IN ============================ -->
   <section class="screen is-active" data-screen="signin" aria-label="Sign in">
     <div class="screen-body signin-body">
-      <h1 class="detail-title">Training Arc</h1>
-      <p class="detail-summary">Enter your email and we'll send you a sign-in link. No password needed.</p>
+      <h1 class="detail-title" id="signinTitle">Training Arc</h1>
+      <p class="detail-summary" id="signinSubtitle">Sign in with your email and password.</p>
 
       <label class="field-label" for="signinEmailInput">Email</label>
       <input class="field-input" type="email" id="signinEmailInput" placeholder="you@example.com" autocomplete="email" inputmode="email">
 
+      <label class="field-label" for="signinPasswordInput">Password</label>
+      <input class="field-input" type="password" id="signinPasswordInput" placeholder="Password" autocomplete="current-password">
+
       <p class="signin-status" id="signinStatus" hidden></p>
 
-      <button type="button" class="btn btn-primary btn-block" id="signinSendBtn">Send sign-in link</button>
+      <button type="button" class="btn btn-primary btn-block" id="signinSubmitBtn">Sign in</button>
+      <button type="button" class="btn btn-secondary btn-block signin-toggle" id="signinToggleBtn">Create an account instead</button>
+      <button type="button" class="btn-link" id="signinMagicLinkBtn">Email me a sign-in link instead</button>
     </div>
   </section>
 
@@ -54,6 +59,9 @@
         </button>
         <button type="button" class="icon-btn icon-btn--muted" id="openHistoryBtn" aria-label="History">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0-7 3.4M5 3v3.5H8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="icon-btn icon-btn--muted" id="setPasswordBtn" aria-label="Set password">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button type="button" class="icon-btn icon-btn--muted" id="signOutBtn" aria-label="Sign out">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5M21 12H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>

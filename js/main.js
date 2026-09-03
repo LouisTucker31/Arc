@@ -1042,12 +1042,15 @@
   /* ------------------------------------------------------------------
    * Sign in
    *
-   * A magic link email is the only auth method: the user enters their
-   * email, Supabase sends a one-time link, and clicking it reloads the
-   * app with a real session already active. There is no separate
-   * "logged out" screen to design around, since signInWithOtp() covers
-   * both first-time sign-up and every later sign-in the same way.
+   * Email + password is the primary method, with sign in/sign up
+   * toggled by the same form (signinMode tracks which). A magic-link
+   * fallback stays available for the one-time case of an account that
+   * was created before password auth existed and has no password set
+   * yet; once signed in that way, setPassword() below lets it adopt a
+   * password so it never needs the email round-trip again.
    * ---------------------------------------------------------------- */
+
+  let signinMode = "signin";
 
   function setSigninStatus(message, isError) {
     const status = document.getElementById("signinStatus");
@@ -1056,23 +1059,61 @@
     status.classList.toggle("is-error", Boolean(isError));
   }
 
-  async function handleSendMagicLink() {
-    const emailInput = document.getElementById("signinEmailInput");
-    const email = emailInput.value.trim();
+  function updateSigninModeUI() {
+    const isSignUp = signinMode === "signup";
+    document.getElementById("signinSubmitBtn").textContent = isSignUp ? "Create account" : "Sign in";
+    document.getElementById("signinToggleBtn").textContent = isSignUp
+      ? "Sign in to an existing account instead"
+      : "Create an account instead";
+  }
+
+  async function handleSigninSubmit() {
+    const email = document.getElementById("signinEmailInput").value.trim();
+    const password = document.getElementById("signinPasswordInput").value;
+    if (!email || !password) {
+      setSigninStatus("Enter your email and password.", true);
+      return;
+    }
+    const submitBtn = document.getElementById("signinSubmitBtn");
+    submitBtn.disabled = true;
+    setSigninStatus(signinMode === "signup" ? "Creating account..." : "Signing in...", false);
+    try {
+      if (signinMode === "signup") {
+        await signUpWithPassword(email, password);
+        setSigninStatus("Account created. Check your email to confirm, then sign in.", false);
+      } else {
+        await signInWithPassword(email, password);
+      }
+    } catch (err) {
+      setSigninStatus("Could not sign in. Check your email and password.", true);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  }
+
+  async function handleSendMagicLinkFallback() {
+    const email = document.getElementById("signinEmailInput").value.trim();
     if (!email) {
       setSigninStatus("Enter your email first.", true);
       return;
     }
-    const sendBtn = document.getElementById("signinSendBtn");
-    sendBtn.disabled = true;
     setSigninStatus("Sending link...", false);
     try {
       await sendMagicLink(email);
       setSigninStatus("Check your email for a sign-in link.", false);
     } catch (err) {
       setSigninStatus("Could not send the link. Please try again.", true);
-    } finally {
-      sendBtn.disabled = false;
+    }
+  }
+
+  async function handleSetPassword() {
+    const password = window.prompt("Set a password for your account:");
+    if (!password) return;
+    try {
+      await setPassword(password);
+      window.alert("Password set. You can now sign in with email and password on any device.");
+    } catch (err) {
+      window.alert("Could not set password: " + (err.message || err));
     }
   }
 
@@ -1091,7 +1132,15 @@
     const historyDetailDialog = document.getElementById("historyDetailDialog");
     const deleteConfirmDialog = document.getElementById("deleteConfirmDialog");
 
-    document.getElementById("signinSendBtn").addEventListener("click", handleSendMagicLink);
+    updateSigninModeUI();
+    document.getElementById("signinSubmitBtn").addEventListener("click", handleSigninSubmit);
+    document.getElementById("signinToggleBtn").addEventListener("click", () => {
+      signinMode = signinMode === "signup" ? "signin" : "signup";
+      updateSigninModeUI();
+      setSigninStatus("", false);
+    });
+    document.getElementById("signinMagicLinkBtn").addEventListener("click", handleSendMagicLinkFallback);
+
     document.getElementById("signOutBtn").addEventListener("click", async () => {
       await signOut();
       PLANS = [];
@@ -1099,6 +1148,7 @@
       nav.stack = ["signin"];
       showScreen("signin");
     });
+    document.getElementById("setPasswordBtn").addEventListener("click", handleSetPassword);
 
     document.getElementById("openTodayBtn").addEventListener("click", openToday);
     document.getElementById("openHistoryBtn").addEventListener("click", async () => {
