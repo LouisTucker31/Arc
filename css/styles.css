@@ -990,6 +990,10 @@ button.thumb-row:active {
   flex: 1 1 0;
 }
 
+.dialog-actions--stacked {
+  margin-top: 10px;
+}
+
 .dialog-detail-list {
   margin-bottom: 4px;
 }

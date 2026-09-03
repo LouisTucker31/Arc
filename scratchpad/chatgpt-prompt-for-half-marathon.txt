@@ -1,0 +1,18 @@
+I'm building a training plan into a JSON file that matches a specific schema. I'll paste:
+1. A JSON template file with instructions embedded in it (as an "_instructions" field) explaining exactly what each field means and how to fill it in.
+2. My actual half marathon training plan data (from a spreadsheet or notes).
+
+Your job: produce a single valid JSON file matching the template's exact structure (same field names, same types), with the "workouts" array fully filled in for every real training day in my plan, and the "_instructions" and "_example" keys removed from your output.
+
+Important:
+- Only include real training days as rows (skip rest days entirely -- don't add rows for them).
+- Rewrite any casual/shorthand notes from my plan into clear, instructional coaching sentences for warmup/mainSet/cooldown, in the same tone as the example row -- don't paste my notes verbatim.
+- Every workout needs a "discipline.metric" at minimum. Only include "target", "warmup", "cooldown" when the session actually has one.
+- Only the first workout of each week (by date) gets a "week_cover_url" set; every other workout that week must have "week_cover_url": null.
+- Output only the final JSON, no commentary, no markdown code fences -- just the raw JSON so I can paste it directly.
+
+Here's the template:
+[PASTE THE CONTENTS OF half-marathon-plan-template.json HERE]
+
+Here's my actual half marathon training plan:
+[PASTE YOUR SPREADSHEET/PLAN DATA HERE]

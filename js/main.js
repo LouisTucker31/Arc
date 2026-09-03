@@ -233,6 +233,14 @@
     return dateTimeFormatter.format(new Date(iso));
   }
 
+  /* Workout durations are sourced from real training plans and don't
+     always land on a clean number, so the duration tag shown on a
+     tile always rounds to the nearest 5 minutes for a tidier display,
+     without needing the underlying data itself to be pre-rounded. */
+  function formatEstimateMinutes(minutes) {
+    return Math.round(minutes / 5) * 5 + " min";
+  }
+
   /* A small helper for the "part • part • part" subtitle lines used in
      list rows. Dots are real elements, not punctuation characters, so
      they always line up and read cleanly with a screen reader. */
@@ -262,17 +270,11 @@
   const nav = { stack: ["signin"] };
   const LAST_SCREEN_KEY = "trainingArc.lastScreen.v1";
 
-  /* Scroll position per screen name, so going back restores where you
-     were (e.g. scrolled partway down a week list) instead of always
-     resetting to the top. Only meaningful within the current session,
-     the same as the rest of the in-memory nav stack. */
-  const scrollPositions = {};
-
-  function showScreen(name, scrollY) {
+  function showScreen(name) {
     document.querySelectorAll(".screen").forEach((el) => {
       el.classList.toggle("is-active", el.dataset.screen === name);
     });
-    window.scrollTo(0, scrollY || 0);
+    window.scrollTo(0, 0);
     try {
       window.sessionStorage.setItem(LAST_SCREEN_KEY, name);
     } catch (err) {
@@ -289,27 +291,15 @@
     armHistoryTrap();
   }
 
-  /* Records the currently-visible screen's scroll position before
-     leaving it, so goBack() can restore it later. Called at the start
-     of both goTo() and goBack(), while the outgoing screen is still
-     on top of the stack. */
-  function saveCurrentScrollPosition() {
-    const activeName = nav.stack[nav.stack.length - 1];
-    if (activeName) scrollPositions[activeName] = window.scrollY;
-  }
-
   function goTo(name) {
-    saveCurrentScrollPosition();
     nav.stack.push(name);
     showScreen(name);
   }
 
   function goBack() {
     if (nav.stack.length > 1) {
-      saveCurrentScrollPosition();
       nav.stack.pop();
-      const name = nav.stack[nav.stack.length - 1];
-      showScreen(name, scrollPositions[name]);
+      showScreen(nav.stack[nav.stack.length - 1]);
     }
   }
 
@@ -386,6 +376,7 @@
     img.src = current.plan.cover;
     img.alt = "";
     img.loading = "lazy";
+    applyFocalY(img, SESSION_COVER_FOCAL_Y[current.plan.cover]);
 
     const overlay = document.createElement("div");
     overlay.className = "workout-tile-overlay";
@@ -456,6 +447,7 @@
     img.src = plan.cover;
     img.alt = "";
     img.loading = "lazy";
+    applyFocalY(img, SESSION_COVER_FOCAL_Y[plan.cover]);
 
     const overlay = document.createElement("div");
     overlay.className = "workout-row-overlay";
@@ -476,16 +468,20 @@
   }
 
   let currentPlan = null;
+  const LAST_PLAN_KEY = "trainingArc.lastPlan.v1";
 
   function openPlan(id) {
     const plan = findPlan(id);
     if (!plan) return;
     currentPlan = plan;
-    const currentWeekRow = renderLibrary(plan);
-    goTo("library");
-    if (currentWeekRow) {
-      currentWeekRow.scrollIntoView({ block: "center" });
+    try {
+      window.sessionStorage.setItem(LAST_PLAN_KEY, id);
+    } catch (err) {
+      // Same nicety-only caveat as LAST_SCREEN_KEY: never worth
+      // crashing navigation over.
     }
+    renderLibrary(plan);
+    goTo("library");
   }
 
   /* ------------------------------------------------------------------
@@ -504,49 +500,13 @@
       .map(([week, weekWorkouts]) => ({ week, workouts: weekWorkouts }));
   }
 
-  /* The week whose date range contains today, or (if today falls
-     outside every week, e.g. before the plan starts or after it
-     ends) whichever week is closest to today. Used to scroll the
-     Library screen to the relevant week on open, so the list still
-     reads top-to-bottom in plan order rather than being reordered. */
-  function currentWeekGroup(weekGroups) {
-    const today = todayIso();
-    let closest = null;
-    let closestDistance = Infinity;
-
-    weekGroups.forEach((weekGroup) => {
-      const start = weekGroup.workouts[0].date;
-      const end = weekGroup.workouts[weekGroup.workouts.length - 1].date;
-      if (today >= start && today <= end) {
-        closest = weekGroup;
-        closestDistance = 0;
-        return;
-      }
-      const distance = today < start
-        ? new Date(start) - new Date(today)
-        : new Date(today) - new Date(end);
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closest = weekGroup;
-      }
-    });
-
-    return closest;
-  }
-
   function renderLibrary(plan) {
     document.getElementById("libraryPlanTitle").textContent = plan.title;
     const list = document.getElementById("weekList");
     list.innerHTML = "";
-    const weekGroups = weeksForPlan(plan.id);
-    const current = currentWeekGroup(weekGroups);
-    let currentRow = null;
-    weekGroups.forEach((weekGroup) => {
-      const row = buildWeekRow(weekGroup);
-      if (weekGroup === current) currentRow = row;
-      list.appendChild(row);
+    weeksForPlan(plan.id).forEach((weekGroup) => {
+      list.appendChild(buildWeekRow(weekGroup));
     });
-    return currentRow;
   }
 
   /* The first workout of the week carries the dedicated week-banner
@@ -563,6 +523,8 @@
      the top), keyed by cover photo path; falls back to a centered
      crop for a photo with no entry. */
   const SESSION_COVER_FOCAL_Y = {
+    "assets/photos/olympic-triathlon/olympic-triathlon-plan.webp": 40,
+    "assets/photos/half-marathon/half-marathon-plan.webp": 30,
     "assets/photos/olympic-triathlon/easy-run.webp": 20,
     "assets/photos/olympic-triathlon/pool-swim.webp": 50,
     "assets/photos/olympic-triathlon/quality-run.webp": 15,
@@ -582,6 +544,17 @@
     "assets/photos/olympic-triathlon/olympic-week-10.webp": 40,
     "assets/photos/olympic-triathlon/olympic-week-11.webp": 25,
     "assets/photos/olympic-triathlon/olympic-week-12.webp": 30,
+    "assets/photos/half-marathon/half-marathon-week-1.webp": 20,
+    "assets/photos/half-marathon/half-marathon-week-2.webp": 10,
+    "assets/photos/half-marathon/half-marathon-week-3.webp": 50,
+    "assets/photos/half-marathon/half-marathon-week-4.webp": 15,
+    "assets/photos/half-marathon/half-marathon-week-5.webp": 50,
+    "assets/photos/half-marathon/half-marathon-week-6.webp": 10,
+    "assets/photos/half-marathon/half-marathon-week-7.webp": 30,
+    "assets/photos/half-marathon/half-marathon-week-8.webp": 50,
+    "assets/photos/half-marathon/easy-run.webp": 30,
+    "assets/photos/half-marathon/quality-run.webp": 15,
+    "assets/photos/half-marathon/long-run.webp": 45,
   };
 
   function applyFocalY(img, focalY) {
@@ -678,7 +651,7 @@
 
     const meta = document.createElement("div");
     meta.className = "workout-row-meta";
-    buildSubtitle(meta, [workout.estimateMinutes + " min"]);
+    buildSubtitle(meta, [formatEstimateMinutes(workout.estimateMinutes)]);
 
     overlay.append(day, title, meta);
     btn.append(img, overlay);
@@ -729,7 +702,7 @@
     metricTag.className = "detail-meta-item";
     metricTag.textContent = workout.discipline
       ? formatMetricPill(primaryMetricFor(workout.discipline))
-      : workout.estimateMinutes + " min";
+      : formatEstimateMinutes(workout.estimateMinutes);
     meta.appendChild(metricTag);
 
     renderDetailTarget(workout);
@@ -854,22 +827,49 @@
    * Log screen
    * ---------------------------------------------------------------- */
 
+  /* When editing an existing history entry (opened from the History
+     detail dialog) this holds that entry's id, and handleSaveWorkout
+     updates it in place instead of inserting a new one. Null when
+     logging a fresh workout from its Detail screen. */
+  let editingEntryId = null;
+
   function openLog() {
     if (!currentWorkout) return;
+    editingEntryId = null;
+    document.getElementById("logTitle").textContent = "Log workout";
     document.getElementById("logWorkoutName").textContent = currentWorkout.title;
     document.getElementById("paceInput").value = "";
     document.getElementById("durationInput").value = "";
     document.getElementById("distanceInput").value = "";
     document.getElementById("notesInput").value = "";
-    renderEffortGroup();
+    renderEffortGroup(null);
+    goTo("log");
+  }
+
+  /* Opens the Log screen pre-filled with an existing entry's values,
+     so saving updates that entry instead of creating a new one. The
+     entry's own workout (not necessarily currentWorkout, which may be
+     unset or pointing at something else entirely) supplies the title
+     shown at the top of the form. */
+  function openEditLog(entry) {
+    const workout = findWorkout(entry.workoutId);
+    editingEntryId = entry.id;
+    document.getElementById("logTitle").textContent = "Edit workout";
+    document.getElementById("logWorkoutName").textContent = workout ? workout.title : "Workout";
+    document.getElementById("paceInput").value = entry.pace || "";
+    document.getElementById("durationInput").value = entry.duration || "";
+    document.getElementById("distanceInput").value = entry.distance || "";
+    document.getElementById("notesInput").value = entry.notes || "";
+    renderEffortGroup(entry.effort);
     goTo("log");
   }
 
   /* Native radio inputs (visually hidden, each wrapped in a styled
      label) rather than a hand-rolled role="radio" widget, so arrow
      keys, Home/End and single-tab-stop grouping all come from the
-     browser for free instead of needing custom keyboard handling. */
-  function renderEffortGroup() {
+     browser for free instead of needing custom keyboard handling.
+     selected pre-checks a value when editing an existing entry. */
+  function renderEffortGroup(selected) {
     const group = document.getElementById("effortGroup");
     group.innerHTML = "";
     for (let i = 1; i <= 10; i++) {
@@ -881,6 +881,7 @@
       input.name = "effort";
       input.value = String(i);
       input.className = "effort-btn-input";
+      if (selected === i) input.checked = true;
 
       const text = document.createElement("span");
       text.textContent = String(i);
@@ -896,27 +897,35 @@
   }
 
   async function handleSaveWorkout() {
-    if (!currentWorkout) return;
-    const entry = {
-      workoutId: currentWorkout.id,
+    if (!editingEntryId && !currentWorkout) return;
+    const fields = {
       pace: document.getElementById("paceInput").value.trim(),
       duration: document.getElementById("durationInput").value.trim(),
       distance: document.getElementById("distanceInput").value.trim(),
       effort: selectedEffort(),
       notes: document.getElementById("notesInput").value.trim(),
     };
-    lastSavedEntryId = await addHistoryEntry(entry);
+
+    const wasEditing = Boolean(editingEntryId);
+    if (editingEntryId) {
+      await updateHistoryEntry(editingEntryId, fields);
+      lastSavedEntryId = editingEntryId;
+    } else {
+      lastSavedEntryId = await addHistoryEntry(Object.assign({ workoutId: currentWorkout.id }, fields));
+    }
+    editingEntryId = null;
 
     nav.stack = ["plans", "history"];
     await renderHistory();
     showScreen("history");
-    showSaveBanner();
+    showSaveBanner(wasEditing ? "Changes saved" : "Workout saved");
   }
 
   let saveBannerTimeout = null;
 
-  function showSaveBanner() {
+  function showSaveBanner(message) {
     const banner = document.getElementById("saveBanner");
+    banner.textContent = message;
     banner.hidden = false;
     window.clearTimeout(saveBannerTimeout);
     saveBannerTimeout = window.setTimeout(() => {
@@ -1048,10 +1057,12 @@
   /* Reload persistence only covers what can be cheaply and correctly
      rebuilt from a bare screen name: Plans (the default) and History
      (no selection state needed). Detail/Log/Week all depend on
-     in-memory selection (currentWorkout/currentPlan/a weekGroup) that
-     a reload discards, so those fall back to Library (one level in
-     from Plans) rather than either guessing which workout was open
-     or silently dropping the user all the way back to Plans. */
+     in-memory selection (currentWorkout/a weekGroup) that a reload
+     discards, so those fall back to Library (one level in from Plans)
+     rather than either guessing which workout was open or silently
+     dropping the user all the way back to Plans. Library itself is
+     restored to the actual plan that was open (via LAST_PLAN_KEY),
+     not just an arbitrary first plan, now that more than one exists. */
   async function restoreLastScreen() {
     let lastScreen;
     try {
@@ -1067,7 +1078,13 @@
       return;
     }
     if (lastScreen === "library" || lastScreen === "week" || lastScreen === "detail" || lastScreen === "log") {
-      const plan = PLANS[0];
+      let lastPlanId;
+      try {
+        lastPlanId = window.sessionStorage.getItem(LAST_PLAN_KEY);
+      } catch (err) {
+        // fall through to the PLANS[0] fallback below
+      }
+      const plan = (lastPlanId && findPlan(lastPlanId)) || PLANS[0];
       if (plan) openPlan(plan.id);
     }
   }
@@ -1290,6 +1307,12 @@
     document.getElementById("historyDetailDeleteBtn").addEventListener("click", () => {
       historyDetailDialog.close();
       deleteConfirmDialog.showModal();
+    });
+    document.getElementById("historyDetailEditBtn").addEventListener("click", () => {
+      const entry = historyEntries.find((e) => e.id === historyDetailId);
+      if (!entry) return;
+      historyDetailDialog.close();
+      openEditLog(entry);
     });
     document.getElementById("deleteCancelBtn").addEventListener("click", () => deleteConfirmDialog.close());
     deleteConfirmDialog.addEventListener("close", async () => {

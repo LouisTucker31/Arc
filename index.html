@@ -15,7 +15,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0d13">
 
-<!-- Home screen app behaviour on iOS -->
+<!-- Home screen app behaviour on iOS and Android -->
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Arc">
@@ -143,7 +144,7 @@
       <button type="button" class="icon-btn" id="logBackBtn" aria-label="Back to workout summary">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <h1 class="toolbar-title toolbar-title--inline">Log workout</h1>
+      <h1 class="toolbar-title toolbar-title--inline" id="logTitle">Log workout</h1>
       <span class="toolbar-spacer" aria-hidden="true"></span>
     </header>
     <div class="screen-body log-body">
@@ -167,7 +168,7 @@
       <textarea class="field-textarea" id="notesInput" rows="4" placeholder="How did it feel? Anything to remember for next time?"></textarea>
     </div>
     <div class="sticky-action">
-      <button type="button" class="btn btn-primary btn-block" id="saveWorkoutBtn">Log workout</button>
+      <button type="button" class="btn btn-primary btn-block" id="saveWorkoutBtn">Save</button>
     </div>
   </section>
 
@@ -181,7 +182,7 @@
       <span class="toolbar-spacer" aria-hidden="true"></span>
     </header>
     <div class="screen-body">
-      <p class="save-banner" id="saveBanner" hidden>Workout saved</p>
+      <p class="save-banner" id="saveBanner" hidden></p>
       <div class="empty-state" id="historyEmpty" hidden>
         <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         <p class="empty-title">No workouts logged yet</p>
@@ -212,6 +213,9 @@
     </div>
     <div class="dialog-actions">
       <button type="button" class="btn btn-destructive" id="historyDetailDeleteBtn">Delete</button>
+      <button type="button" class="btn btn-secondary" id="historyDetailEditBtn">Edit</button>
+    </div>
+    <div class="dialog-actions dialog-actions--stacked">
       <button type="submit" class="btn btn-secondary" value="close">Close</button>
     </div>
   </form>
