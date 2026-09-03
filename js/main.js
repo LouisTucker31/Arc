@@ -277,10 +277,12 @@
   /* ------------------------------------------------------------------
    * Navigation
    *
-   * A simple in-app stack drives which screen is visible. The browser
-   * history API is used only as a trap: every screen change pushes one
-   * state so that Chrome's Android back gesture produces a popstate we
-   * can react to, rather than closing the installed app outright.
+   * A simple in-app stack drives which screen is visible. The app's
+   * own back buttons call goBack() directly; there is no attempt to
+   * hook into the browser's own history/back gesture (an earlier
+   * version tried that and caused real freezes and white-screens on
+   * iOS Safari's edge-swipe, which is worse than just leaving that
+   * gesture alone).
    * ---------------------------------------------------------------- */
 
   const nav = { stack: ["signin"] };
@@ -298,13 +300,6 @@
       // contexts). Reload-persistence is a nicety, never worth crashing
       // navigation over.
     }
-    // Re-arms the history trap on every screen change (not just after
-    // a popstate), so there is always exactly one trap entry between
-    // the user and real prior history. Without this, an edge-swipe
-    // back gesture on iOS can burn through the single trap entry
-    // pushed at startup and land on whatever page came before the app
-    // loaded, instead of stepping back through in-app screens.
-    armHistoryTrap();
   }
 
   function goTo(name) {
@@ -316,18 +311,6 @@
     if (nav.stack.length > 1) {
       nav.stack.pop();
       showScreen(nav.stack[nav.stack.length - 1]);
-    }
-  }
-
-  function armHistoryTrap() {
-    // Some embedding contexts (and the file:// origin used by local
-    // testing tools) refuse history.pushState outright. That should
-    // never take down the rest of the app, since the trap is only a
-    // nicety for the Android back gesture and iOS edge-swipe-back.
-    try {
-      history.pushState({ trainingArcTrap: true }, "", location.href);
-    } catch (err) {
-      console.error("Could not arm history trap", err);
     }
   }
 
@@ -1341,10 +1324,6 @@
       deleteConfirmDialog.returnValue = "";
       historyDetailId = null;
     });
-
-    window.addEventListener("popstate", goBack);
-
-    armHistoryTrap();
 
     const session = await getCurrentSession();
     if (session) {
