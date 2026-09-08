@@ -61,8 +61,8 @@
         <button type="button" class="icon-btn icon-btn--muted" id="openCalendarBtn" aria-label="Calendar">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
         </button>
-        <button type="button" class="icon-btn icon-btn--muted" id="signOutBtn" aria-label="Sign out">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
+        <button type="button" class="icon-btn icon-btn--muted" id="openProfileBtn" aria-label="Profile">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
         </button>
       </div>
     </header>
@@ -273,6 +273,130 @@
     </div>
   </section>
 
+  <!-- ============================ PROFILE ============================ -->
+  <section class="screen" data-screen="profile" aria-label="Profile">
+    <header class="toolbar toolbar--back">
+      <button type="button" class="icon-btn" id="profileBackBtn" aria-label="Back to training plans">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h1 class="toolbar-title toolbar-title--inline">Profile</h1>
+      <span class="toolbar-spacer" aria-hidden="true"></span>
+    </header>
+    <div class="screen-body profile-body">
+      <div class="profile-header">
+        <h1 class="profile-name" id="profileName">Your name</h1>
+        <p class="profile-email" id="profileEmail"></p>
+      </div>
+
+      <!-- Personal details -->
+      <div class="profile-section">
+        <h2 class="section-heading">Personal details</h2>
+        <div class="profile-card">
+          <label class="field-label" for="profileNameInput">Name</label>
+          <input class="field-input" type="text" id="profileNameInput" placeholder="Your name">
+
+          <label class="field-label" for="profileDobInput">Date of birth</label>
+          <input class="field-input" type="date" id="profileDobInput">
+
+          <div class="field-row">
+            <div class="field-row-item">
+              <label class="field-label" for="profileHeightInput">Height (cm)</label>
+              <input class="field-input" type="number" inputmode="decimal" id="profileHeightInput" placeholder="e.g. 178">
+            </div>
+            <div class="field-row-item">
+              <label class="field-label" for="profileWeightInput">Weight (kg)</label>
+              <input class="field-input" type="number" inputmode="decimal" id="profileWeightInput" placeholder="e.g. 72">
+            </div>
+          </div>
+
+          <label class="field-label" for="profileGenderInput">Gender</label>
+          <select class="field-input field-select" id="profileGenderInput">
+            <option value="">Prefer not to say</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="non_binary">Non-binary</option>
+            <option value="other">Other</option>
+          </select>
+
+          <button type="button" class="btn btn-primary btn-block" id="profileSaveDetailsBtn">Save details</button>
+          <p class="save-banner" id="profileDetailsSaveBanner" hidden></p>
+        </div>
+      </div>
+
+      <!-- Races -->
+      <div class="profile-section">
+        <div class="profile-section-header">
+          <h2 class="section-heading">Races</h2>
+          <button type="button" class="icon-btn icon-btn--muted" id="addRaceBtn" aria-label="Add race">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </button>
+        </div>
+
+        <div class="profile-card">
+          <h3 class="profile-subheading">Upcoming</h3>
+          <div class="empty-state" id="upcomingRacesEmpty" hidden>
+            <p class="empty-text">No upcoming races added yet.</p>
+          </div>
+          <ul class="race-list" id="upcomingRaceList"></ul>
+        </div>
+
+        <div class="profile-card">
+          <h3 class="profile-subheading">Past</h3>
+          <div class="empty-state" id="pastRacesEmpty" hidden>
+            <p class="empty-text">No past races added yet.</p>
+          </div>
+          <ul class="race-list" id="pastRaceList"></ul>
+        </div>
+      </div>
+
+      <!-- Personal bests -->
+      <div class="profile-section">
+        <h2 class="section-heading">Personal bests</h2>
+        <p class="profile-section-note">Calculated automatically from your logged workouts once you start logging - coming soon.</p>
+        <div class="profile-card profile-card--placeholder">
+          <div class="pb-grid">
+            <div class="pb-item"><span class="pb-item-label">Swim 400m</span><span class="pb-item-value">-</span></div>
+            <div class="pb-item"><span class="pb-item-label">Swim 1500m</span><span class="pb-item-value">-</span></div>
+            <div class="pb-item"><span class="pb-item-label">Bike 20km</span><span class="pb-item-value">-</span></div>
+            <div class="pb-item"><span class="pb-item-label">Bike 40km</span><span class="pb-item-value">-</span></div>
+            <div class="pb-item"><span class="pb-item-label">Run 5km</span><span class="pb-item-value">-</span></div>
+            <div class="pb-item"><span class="pb-item-label">Run 10km</span><span class="pb-item-value">-</span></div>
+            <div class="pb-item"><span class="pb-item-label">Half Marathon</span><span class="pb-item-value">-</span></div>
+            <div class="pb-item"><span class="pb-item-label">Marathon</span><span class="pb-item-value">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paces -->
+      <div class="profile-section">
+        <h2 class="section-heading">Paces</h2>
+        <p class="profile-section-note">Calculated automatically from your logged workouts once you start logging - coming soon.</p>
+        <div class="profile-card profile-card--placeholder">
+          <h3 class="profile-subheading">Run</h3>
+          <div class="pace-grid">
+            <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
+            <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
+            <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+          </div>
+          <h3 class="profile-subheading">Bike</h3>
+          <div class="pace-grid">
+            <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
+            <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
+            <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+          </div>
+          <h3 class="profile-subheading">Swim</h3>
+          <div class="pace-grid">
+            <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
+            <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
+            <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-secondary btn-block profile-signout-btn" id="signOutBtn">Sign out</button>
+    </div>
+  </section>
+
 </div>
 
 <!-- ============================ DIALOGS ============================ -->
@@ -312,6 +436,35 @@
     <div class="dialog-actions">
       <button type="button" class="btn btn-secondary" id="deleteCancelBtn">Cancel</button>
       <button type="submit" class="btn btn-destructive" id="deleteConfirmBtn" value="delete">Delete</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="app-dialog" id="raceDialog">
+  <form method="dialog" class="dialog-form">
+    <h2 class="dialog-title" id="raceDialogTitle">Add race</h2>
+
+    <label class="field-label" for="raceNameInput">Race name</label>
+    <input class="field-input" type="text" id="raceNameInput" placeholder="e.g. London Marathon">
+
+    <label class="field-label" for="raceDateInput">Date</label>
+    <input class="field-input" type="date" id="raceDateInput">
+
+    <label class="field-label" for="raceDisciplineInput">Distance / type</label>
+    <input class="field-input" type="text" id="raceDisciplineInput" placeholder="e.g. Half Marathon, Olympic Triathlon">
+
+    <label class="field-label" for="raceGoalInput">Goal</label>
+    <input class="field-input" type="text" id="raceGoalInput" placeholder="e.g. Sub 1:45, or just finish">
+
+    <label class="field-label" for="raceNotesInput">Notes (optional)</label>
+    <textarea class="field-textarea" id="raceNotesInput" rows="3" placeholder="Anything else to remember"></textarea>
+
+    <div class="dialog-actions" id="raceDialogDeleteRow" hidden>
+      <button type="button" class="btn btn-destructive" id="raceDeleteBtn">Delete</button>
+    </div>
+    <div class="dialog-actions dialog-actions--stacked">
+      <button type="button" class="btn btn-primary" id="raceSaveBtn">Save</button>
+      <button type="submit" class="btn btn-secondary" value="close">Cancel</button>
     </div>
   </form>
 </dialog>

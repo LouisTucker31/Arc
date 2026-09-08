@@ -1440,9 +1440,9 @@
     return li;
   }
 
-  function buildChevron() {
+  function buildChevron(className = "thumb-row-chevron") {
     const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    chevron.setAttribute("class", "thumb-row-chevron");
+    chevron.setAttribute("class", className);
     chevron.setAttribute("viewBox", "0 0 24 24");
     chevron.setAttribute("aria-hidden", "true");
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -1592,6 +1592,148 @@
   }
 
   /* ------------------------------------------------------------------
+   * Profile screen
+   *
+   * Personal details (profiles table, one row per user) and races
+   * (races table, many rows per user) both load fresh every time the
+   * screen opens - there's no cross-screen cache for either the way
+   * WORKOUTS/historyEntries have, since nothing else in the app reads
+   * them yet. PBs and paces are static placeholder markup for now
+   * (calculating them from logged workouts is a separate piece of
+   * work), so nothing here touches those sections.
+   * ---------------------------------------------------------------- */
+
+  let races = [];
+  let editingRaceId = null;
+
+  async function openProfile() {
+    document.getElementById("profileEmail").textContent = currentSession ? currentSession.user.email : "";
+    await Promise.all([loadProfileIntoForm(), loadAndRenderRaces()]);
+    goTo("profile");
+  }
+
+  async function loadProfileIntoForm() {
+    if (!currentSession) return;
+    const profile = await loadProfile(currentSession.user.id);
+    const name = profile ? profile.name : "";
+    document.getElementById("profileName").textContent = name || "Your name";
+    document.getElementById("profileNameInput").value = name || "";
+    document.getElementById("profileDobInput").value = (profile && profile.date_of_birth) || "";
+    document.getElementById("profileHeightInput").value = (profile && profile.height_cm) || "";
+    document.getElementById("profileWeightInput").value = (profile && profile.weight_kg) || "";
+    document.getElementById("profileGenderInput").value = (profile && profile.gender) || "";
+  }
+
+  async function handleSaveProfileDetails() {
+    if (!currentSession) return;
+    const fields = {
+      name: document.getElementById("profileNameInput").value.trim(),
+      dateOfBirth: document.getElementById("profileDobInput").value || null,
+      heightCm: document.getElementById("profileHeightInput").value || null,
+      weightKg: document.getElementById("profileWeightInput").value || null,
+      gender: document.getElementById("profileGenderInput").value || null,
+    };
+    await saveProfile(currentSession.user.id, fields);
+    document.getElementById("profileName").textContent = fields.name || "Your name";
+    const banner = document.getElementById("profileDetailsSaveBanner");
+    banner.textContent = "Details saved";
+    banner.hidden = false;
+    window.setTimeout(() => {
+      banner.hidden = true;
+    }, 3000);
+  }
+
+  async function loadAndRenderRaces() {
+    if (!currentSession) return;
+    races = await loadRaces(currentSession.user.id);
+    renderRaceLists();
+  }
+
+  function renderRaceLists() {
+    const todayIso = localDateIso(new Date());
+    const upcoming = races.filter((r) => r.date >= todayIso);
+    const past = races.filter((r) => r.date < todayIso).sort((a, b) => (a.date < b.date ? 1 : -1));
+
+    const upcomingList = document.getElementById("upcomingRaceList");
+    const upcomingEmpty = document.getElementById("upcomingRacesEmpty");
+    upcomingList.innerHTML = "";
+    upcomingEmpty.hidden = upcoming.length > 0;
+    upcoming.forEach((race) => upcomingList.appendChild(buildRaceRow(race, true)));
+
+    const pastList = document.getElementById("pastRaceList");
+    const pastEmpty = document.getElementById("pastRacesEmpty");
+    pastList.innerHTML = "";
+    pastEmpty.hidden = past.length > 0;
+    past.forEach((race) => pastList.appendChild(buildRaceRow(race, false)));
+  }
+
+  function buildRaceRow(race, isUpcoming) {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "race-row";
+
+    const text = document.createElement("div");
+    text.className = "race-row-text";
+    const title = document.createElement("span");
+    title.className = "race-row-title";
+    title.textContent = race.name;
+    const subtitle = document.createElement("span");
+    subtitle.className = "race-row-subtitle";
+    const subtitleParts = [formatDate(race.date)];
+    if (race.discipline) subtitleParts.push(race.discipline);
+    if (isUpcoming && race.goal) subtitleParts.push("Goal: " + race.goal);
+    subtitle.textContent = subtitleParts.join(" · ");
+    text.append(title, subtitle);
+
+    const chevron = buildChevron("race-row-chevron");
+    btn.append(text, chevron);
+    btn.addEventListener("click", () => openRaceDialog(race));
+    li.appendChild(btn);
+    return li;
+  }
+
+  function openRaceDialog(race) {
+    editingRaceId = race ? race.id : null;
+    document.getElementById("raceDialogTitle").textContent = race ? "Edit race" : "Add race";
+    document.getElementById("raceNameInput").value = race ? race.name : "";
+    document.getElementById("raceDateInput").value = race ? race.date : "";
+    document.getElementById("raceDisciplineInput").value = (race && race.discipline) || "";
+    document.getElementById("raceGoalInput").value = (race && race.goal) || "";
+    document.getElementById("raceNotesInput").value = (race && race.notes) || "";
+    document.getElementById("raceDialogDeleteRow").hidden = !race;
+    document.getElementById("raceDialog").showModal();
+  }
+
+  async function handleSaveRace() {
+    if (!currentSession) return;
+    const name = document.getElementById("raceNameInput").value.trim();
+    const date = document.getElementById("raceDateInput").value;
+    if (!name || !date) return;
+    const fields = {
+      name,
+      date,
+      discipline: document.getElementById("raceDisciplineInput").value.trim() || null,
+      goal: document.getElementById("raceGoalInput").value.trim() || null,
+      notes: document.getElementById("raceNotesInput").value.trim() || null,
+    };
+    if (editingRaceId) {
+      await updateRace(editingRaceId, fields);
+    } else {
+      await addRace(currentSession.user.id, fields);
+    }
+    document.getElementById("raceDialog").close();
+    await loadAndRenderRaces();
+  }
+
+  async function handleDeleteRace() {
+    if (!editingRaceId) return;
+    await deleteRace(editingRaceId);
+    document.getElementById("raceDialog").close();
+    await loadAndRenderRaces();
+  }
+
+  /* ------------------------------------------------------------------
    * Wiring
    * ---------------------------------------------------------------- */
 
@@ -1616,6 +1758,10 @@
     if (lastScreen === "calendar") {
       await renderCalendar();
       goTo("calendar");
+      return;
+    }
+    if (lastScreen === "profile") {
+      await openProfile();
       return;
     }
     if (lastScreen === "library" || lastScreen === "week" || lastScreen === "detail" || lastScreen === "log") {
@@ -1794,8 +1940,13 @@
 
   /* Runs once there is a real session (either found on load, or just
      signed in): loads this user's plans and switches the nav stack
-     over to Plans as the new root screen. */
+     over to Plans as the new root screen. currentSession is kept
+     around (id/email only ever come from it) so the Profile screen
+     doesn't need to re-fetch the session just to know who's signed in. */
+  let currentSession = null;
+
   async function enterApp() {
+    currentSession = await getCurrentSession();
     await loadPlansAndWorkouts();
     if (navigator.onLine) await flushOutbox();
     await refreshHistoryData();
@@ -1820,6 +1971,7 @@
 
     document.getElementById("signOutBtn").addEventListener("click", async () => {
       await signOut();
+      currentSession = null;
       PLANS = [];
       WORKOUTS = [];
       document.getElementById("signinEmailInput").value = "";
@@ -1850,6 +2002,13 @@
     document.getElementById("logBackBtn").addEventListener("click", goBack);
     document.getElementById("restBackBtn").addEventListener("click", goBack);
     document.getElementById("calendarBackBtn").addEventListener("click", goBack);
+    document.getElementById("profileBackBtn").addEventListener("click", goBack);
+
+    document.getElementById("openProfileBtn").addEventListener("click", openProfile);
+    document.getElementById("profileSaveDetailsBtn").addEventListener("click", handleSaveProfileDetails);
+    document.getElementById("addRaceBtn").addEventListener("click", () => openRaceDialog(null));
+    document.getElementById("raceSaveBtn").addEventListener("click", handleSaveRace);
+    document.getElementById("raceDeleteBtn").addEventListener("click", handleDeleteRace);
 
     document.getElementById("completeWorkoutBtn").addEventListener("click", openLog);
     document.getElementById("saveWorkoutBtn").addEventListener("click", handleSaveWorkout);

@@ -66,3 +66,86 @@ async function signOut() {
   const { error } = await supabaseClient.auth.signOut();
   if (error) console.error("Sign out failed", error);
 }
+
+async function loadProfile(userId) {
+  const { data, error } = await supabaseClient.from("profiles").select("*").eq("user_id", userId).maybeSingle();
+  if (error) {
+    console.error("Could not load profile", error);
+    return null;
+  }
+  return data;
+}
+
+async function saveProfile(userId, fields) {
+  const { error } = await supabaseClient.from("profiles").upsert({
+    user_id: userId,
+    name: fields.name,
+    date_of_birth: fields.dateOfBirth,
+    height_cm: fields.heightCm,
+    weight_kg: fields.weightKg,
+    gender: fields.gender,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) {
+    console.error("Could not save profile", error);
+    throw error;
+  }
+}
+
+async function loadRaces(userId) {
+  const { data, error } = await supabaseClient
+    .from("races")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: true });
+  if (error) {
+    console.error("Could not load races", error);
+    return [];
+  }
+  return data;
+}
+
+async function addRace(userId, fields) {
+  const { data, error } = await supabaseClient
+    .from("races")
+    .insert({
+      user_id: userId,
+      name: fields.name,
+      date: fields.date,
+      discipline: fields.discipline,
+      goal: fields.goal,
+      notes: fields.notes,
+    })
+    .select()
+    .single();
+  if (error) {
+    console.error("Could not add race", error);
+    throw error;
+  }
+  return data;
+}
+
+async function updateRace(id, fields) {
+  const { error } = await supabaseClient
+    .from("races")
+    .update({
+      name: fields.name,
+      date: fields.date,
+      discipline: fields.discipline,
+      goal: fields.goal,
+      notes: fields.notes,
+    })
+    .eq("id", id);
+  if (error) {
+    console.error("Could not update race", error);
+    throw error;
+  }
+}
+
+async function deleteRace(id) {
+  const { error } = await supabaseClient.from("races").delete().eq("id", id);
+  if (error) {
+    console.error("Could not delete race", error);
+    throw error;
+  }
+}
