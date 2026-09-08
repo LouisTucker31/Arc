@@ -45,6 +45,7 @@ async function updateHistoryEntry(id, fields) {
       distance: fields.distance,
       effort: fields.effort,
       notes: fields.notes,
+      legs: fields.legs || null,
     })
     .eq("id", id);
   if (error) {

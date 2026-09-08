@@ -156,19 +156,59 @@
         <input class="field-input" type="time" id="loggedTimeInput">
       </div>
 
-      <label class="field-label" for="paceInput">Pace</label>
-      <input class="field-input" type="text" id="paceInput" placeholder="e.g. Easy, steady, 5:30/km">
+      <!-- Single-discipline fields (run / bike / swim). Label text and
+           the pace/speed field's id-linked label are swapped in JS to
+           match the workout's sport. -->
+      <div id="logSingleFields">
+        <label class="field-label" for="paceInput" id="paceInputLabel">Pace</label>
+        <input class="field-input" type="text" id="paceInput" placeholder="e.g. Easy, steady, 5:30/km">
 
-      <label class="field-label" for="durationInput">Duration</label>
-      <input class="field-input" type="text" id="durationInput" placeholder="e.g. 35 min">
+        <label class="field-label" for="durationInput">Duration</label>
+        <input class="field-input" type="text" id="durationInput" placeholder="e.g. 35 min">
 
-      <label class="field-label" for="distanceInput">Distance</label>
-      <input class="field-input" type="text" id="distanceInput" placeholder="e.g. 5 km">
+        <label class="field-label" for="distanceInput">Distance</label>
+        <input class="field-input" type="text" id="distanceInput" placeholder="e.g. 5 km">
 
-      <fieldset class="effort-fieldset">
-        <legend class="field-label">Effort</legend>
-        <div class="effort-group" id="effortGroup"></div>
-      </fieldset>
+        <fieldset class="effort-fieldset">
+          <legend class="field-label">Effort</legend>
+          <div class="effort-group" id="effortGroup"></div>
+        </fieldset>
+      </div>
+
+      <!-- Brick fields: two legs, each with its own pace/speed, duration,
+           distance and effort. Which two legs (and their sport, so the
+           right unit shows) is set in JS from the workout's discipline_type. -->
+      <div id="logBrickFields" hidden>
+        <h2 class="section-heading" id="logLegOneHeading">Leg 1</h2>
+        <label class="field-label" for="legOneMetricInput" id="legOneMetricLabel">Speed</label>
+        <input class="field-input" type="text" id="legOneMetricInput" placeholder="e.g. 28 km/h">
+
+        <label class="field-label" for="legOneDurationInput">Duration</label>
+        <input class="field-input" type="text" id="legOneDurationInput" placeholder="e.g. 40 min">
+
+        <label class="field-label" for="legOneDistanceInput">Distance</label>
+        <input class="field-input" type="text" id="legOneDistanceInput" placeholder="e.g. 20 km">
+
+        <fieldset class="effort-fieldset">
+          <legend class="field-label">Effort</legend>
+          <div class="effort-group" id="legOneEffortGroup"></div>
+        </fieldset>
+
+        <h2 class="section-heading" id="logLegTwoHeading">Leg 2</h2>
+        <label class="field-label" for="legTwoMetricInput" id="legTwoMetricLabel">Pace</label>
+        <input class="field-input" type="text" id="legTwoMetricInput" placeholder="e.g. 4:30/km">
+
+        <label class="field-label" for="legTwoDurationInput">Duration</label>
+        <input class="field-input" type="text" id="legTwoDurationInput" placeholder="e.g. 15 min">
+
+        <label class="field-label" for="legTwoDistanceInput">Distance</label>
+        <input class="field-input" type="text" id="legTwoDistanceInput" placeholder="e.g. 3 km">
+
+        <fieldset class="effort-fieldset">
+          <legend class="field-label">Effort</legend>
+          <div class="effort-group" id="legTwoEffortGroup"></div>
+        </fieldset>
+      </div>
 
       <label class="field-label" for="notesInput">Notes (optional)</label>
       <textarea class="field-textarea" id="notesInput" rows="4" placeholder="How did it feel? Anything to remember for next time?"></textarea>
@@ -230,11 +270,14 @@
     <dl class="dialog-detail-list">
       <div><dt>Week</dt><dd id="historyDetailWeek"></dd></div>
       <div><dt>Date</dt><dd id="historyDetailDate"></dd></div>
+    </dl>
+    <dl class="dialog-detail-list" id="historyDetailSingleStats">
       <div><dt>Duration</dt><dd id="historyDetailDuration"></dd></div>
       <div><dt>Distance</dt><dd id="historyDetailDistance"></dd></div>
       <div><dt>Pace</dt><dd id="historyDetailPace"></dd></div>
       <div><dt>Effort</dt><dd id="historyDetailEffort"></dd></div>
     </dl>
+    <div id="historyDetailLegs" hidden></div>
     <div class="dialog-notes" id="historyDetailNotesWrap">
       <p class="field-label">Notes</p>
       <p class="dialog-notes-text" id="historyDetailNotes"></p>

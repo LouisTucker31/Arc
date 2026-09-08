@@ -1194,6 +1194,15 @@ button.thumb-row:active {
   font-weight: 700;
 }
 
+#historyDetailLegs .section-heading {
+  font-size: var(--text-subheadline);
+  margin: 14px 0 2px;
+}
+
+#historyDetailLegs .section-heading:first-child {
+  margin-top: 4px;
+}
+
 .dialog-notes {
   margin: 12px 0 18px;
 }

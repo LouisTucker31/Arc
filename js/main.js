@@ -66,6 +66,7 @@
       distance: entry.distance,
       effort: entry.effort,
       notes: entry.notes,
+      legs: entry.legs || null,
       loggedISO: entry.loggedISO || new Date().toISOString(),
     };
     const outbox = readOutbox();
@@ -117,6 +118,7 @@
       weekCover: row.week_cover_url,
       estimateMinutes: row.estimate_minutes,
       discipline: row.discipline,
+      disciplineType: row.discipline_type,
     };
   }
 
@@ -147,6 +149,7 @@
       distance: row.distance,
       effort: row.effort,
       notes: row.notes,
+      legs: row.legs || null,
     };
   }
 
@@ -163,6 +166,7 @@
       distance: entry.distance,
       effort: entry.effort,
       notes: entry.notes,
+      legs: entry.legs || null,
       pendingSync: true,
     }));
   }
@@ -193,6 +197,7 @@
         distance: entry.distance,
         effort: entry.effort,
         notes: entry.notes,
+        legs: entry.legs || null,
       })
       .select()
       .single();
@@ -946,8 +951,13 @@
   /* When editing an existing history entry (opened from the History
      detail dialog) this holds that entry's id, and handleSaveWorkout
      updates it in place instead of inserting a new one. Null when
-     logging a fresh workout from its Detail screen. */
+     logging a fresh workout from its Detail screen. logFormWorkout
+     tracks whichever workout the form is currently laid out for (the
+     scheduled workout for a fresh log, or the edited entry's own
+     workout) so handleSaveWorkout knows its discipline_type without
+     relying on currentWorkout, which may point elsewhere while editing. */
   let editingEntryId = null;
+  let logFormWorkout = null;
 
   /* Splits an ISO timestamp into the local date/time strings the two
      native inputs expect ("YYYY-MM-DD" / "HH:MM"), using local time
@@ -971,36 +981,118 @@
     return Number.isNaN(local.getTime()) ? new Date().toISOString() : local.toISOString();
   }
 
+  /* Which sport each discipline_type shows on the Log form, and (for
+     bricks) which two sports and in what order. Kept as one lookup so
+     the sport-specific pace/speed label and unit hint live in a single
+     place instead of being duplicated across openLog/openEditLog. */
+  const SPORT_METRIC_LABEL = { run: "Pace", bike: "Speed", swim: "Pace" };
+  const SPORT_METRIC_PLACEHOLDER = {
+    run: "e.g. 5:30 /km",
+    bike: "e.g. 28 km/h",
+    swim: "e.g. 2:10 /100m",
+  };
+  const SPORT_LABEL = { run: "Run", bike: "Bike", swim: "Swim" };
+  const BRICK_LEGS = {
+    brick_bike_run: ["bike", "run"],
+    brick_swim_bike: ["swim", "bike"],
+  };
+
+  function legsForDisciplineType(disciplineType) {
+    return BRICK_LEGS[disciplineType] || null;
+  }
+
+  /* Shows the single-discipline fields (with the pace/speed label and
+     placeholder matched to the sport) or the two-leg brick fields,
+     based on the workout's discipline_type. Falls back to the plain
+     single-discipline form (generic "Pace" label) for anything without
+     a recognised type, e.g. legacy rows or Race Day. */
+  function applyLogFormForWorkout(workout) {
+    const disciplineType = workout ? workout.disciplineType : null;
+    const legs = legsForDisciplineType(disciplineType);
+    const singleFields = document.getElementById("logSingleFields");
+    const brickFields = document.getElementById("logBrickFields");
+
+    if (legs) {
+      singleFields.hidden = true;
+      brickFields.hidden = false;
+      const [legOneSport, legTwoSport] = legs;
+      document.getElementById("logLegOneHeading").textContent = SPORT_LABEL[legOneSport];
+      document.getElementById("legOneMetricLabel").textContent = SPORT_METRIC_LABEL[legOneSport];
+      document.getElementById("legOneMetricInput").placeholder = SPORT_METRIC_PLACEHOLDER[legOneSport];
+      document.getElementById("logLegTwoHeading").textContent = SPORT_LABEL[legTwoSport];
+      document.getElementById("legTwoMetricLabel").textContent = SPORT_METRIC_LABEL[legTwoSport];
+      document.getElementById("legTwoMetricInput").placeholder = SPORT_METRIC_PLACEHOLDER[legTwoSport];
+      return { legs };
+    }
+
+    singleFields.hidden = false;
+    brickFields.hidden = true;
+    const sport = SPORT_METRIC_LABEL[disciplineType] ? disciplineType : null;
+    document.getElementById("paceInputLabel").textContent = sport ? SPORT_METRIC_LABEL[sport] : "Pace";
+    document.getElementById("paceInput").placeholder = sport
+      ? SPORT_METRIC_PLACEHOLDER[sport]
+      : "e.g. Easy, steady, 5:30/km";
+    return { legs: null };
+  }
+
   function openLog() {
     if (!currentWorkout) return;
     editingEntryId = null;
+    logFormWorkout = currentWorkout;
     document.getElementById("logTitle").textContent = "Log workout";
     document.getElementById("logWorkoutName").textContent = currentWorkout.title;
     setLoggedDateTimeInputs(null);
+    const { legs } = applyLogFormForWorkout(currentWorkout);
     document.getElementById("paceInput").value = "";
     document.getElementById("durationInput").value = "";
     document.getElementById("distanceInput").value = "";
     document.getElementById("notesInput").value = "";
-    renderEffortGroup(null);
+    renderEffortGroup("effortGroup", null);
+    if (legs) {
+      clearBrickFields();
+      renderEffortGroup("legOneEffortGroup", null);
+      renderEffortGroup("legTwoEffortGroup", null);
+    }
     goTo("log");
+  }
+
+  function clearBrickFields() {
+    ["legOneMetricInput", "legOneDurationInput", "legOneDistanceInput", "legTwoMetricInput", "legTwoDurationInput", "legTwoDistanceInput"].forEach(
+      (id) => {
+        document.getElementById(id).value = "";
+      }
+    );
   }
 
   /* Opens the Log screen pre-filled with an existing entry's values,
      so saving updates that entry instead of creating a new one. The
      entry's own workout (not necessarily currentWorkout, which may be
      unset or pointing at something else entirely) supplies the title
-     shown at the top of the form. */
+     and discipline type shown/used on the form. */
   function openEditLog(entry) {
     const workout = findWorkout(entry.workoutId);
     editingEntryId = entry.id;
+    logFormWorkout = workout;
     document.getElementById("logTitle").textContent = "Edit workout";
     document.getElementById("logWorkoutName").textContent = workout ? workout.title : "Workout";
     setLoggedDateTimeInputs(entry.loggedISO);
+    const { legs } = applyLogFormForWorkout(workout);
     document.getElementById("paceInput").value = entry.pace || "";
     document.getElementById("durationInput").value = entry.duration || "";
     document.getElementById("distanceInput").value = entry.distance || "";
     document.getElementById("notesInput").value = entry.notes || "";
-    renderEffortGroup(entry.effort);
+    renderEffortGroup("effortGroup", entry.effort);
+    if (legs) {
+      const [legOne, legTwo] = entry.legs || [];
+      document.getElementById("legOneMetricInput").value = (legOne && (legOne.speed || legOne.pace)) || "";
+      document.getElementById("legOneDurationInput").value = (legOne && legOne.duration) || "";
+      document.getElementById("legOneDistanceInput").value = (legOne && legOne.distance) || "";
+      renderEffortGroup("legOneEffortGroup", legOne ? legOne.effort : null);
+      document.getElementById("legTwoMetricInput").value = (legTwo && (legTwo.speed || legTwo.pace)) || "";
+      document.getElementById("legTwoDurationInput").value = (legTwo && legTwo.duration) || "";
+      document.getElementById("legTwoDistanceInput").value = (legTwo && legTwo.distance) || "";
+      renderEffortGroup("legTwoEffortGroup", legTwo ? legTwo.effort : null);
+    }
     goTo("log");
   }
 
@@ -1008,9 +1100,13 @@
      label) rather than a hand-rolled role="radio" widget, so arrow
      keys, Home/End and single-tab-stop grouping all come from the
      browser for free instead of needing custom keyboard handling.
-     selected pre-checks a value when editing an existing entry. */
-  function renderEffortGroup(selected) {
-    const group = document.getElementById("effortGroup");
+     selected pre-checks a value when editing an existing entry. groupId
+     is the container id - effortGroup for a single-discipline log, or
+     legOneEffortGroup/legTwoEffortGroup for a brick's two legs - and
+     also becomes the radio group's name so the three groups (when a
+     brick's fields are all on screen at once) don't interfere. */
+  function renderEffortGroup(groupId, selected) {
+    const group = document.getElementById(groupId);
     group.innerHTML = "";
     for (let i = 1; i <= 10; i++) {
       const label = document.createElement("label");
@@ -1018,7 +1114,7 @@
 
       const input = document.createElement("input");
       input.type = "radio";
-      input.name = "effort";
+      input.name = groupId;
       input.value = String(i);
       input.className = "effort-btn-input";
       if (selected === i) input.checked = true;
@@ -1031,21 +1127,49 @@
     }
   }
 
-  function selectedEffort() {
-    const checked = document.querySelector('#effortGroup input[name="effort"]:checked');
+  function selectedEffort(groupId) {
+    const checked = document.querySelector(`#${groupId} input[name="${groupId}"]:checked`);
     return checked ? Number(checked.value) : null;
   }
 
   async function handleSaveWorkout() {
     if (!editingEntryId && !currentWorkout) return;
-    const fields = {
-      loggedISO: readLoggedDateTimeInputs(),
-      pace: document.getElementById("paceInput").value.trim(),
-      duration: document.getElementById("durationInput").value.trim(),
-      distance: document.getElementById("distanceInput").value.trim(),
-      effort: selectedEffort(),
-      notes: document.getElementById("notesInput").value.trim(),
-    };
+    const legs = legsForDisciplineType(logFormWorkout ? logFormWorkout.disciplineType : null);
+
+    const fields = legs
+      ? {
+          loggedISO: readLoggedDateTimeInputs(),
+          pace: "",
+          duration: "",
+          distance: "",
+          effort: null,
+          notes: document.getElementById("notesInput").value.trim(),
+          legs: [
+            {
+              sport: legs[0],
+              [legs[0] === "bike" ? "speed" : "pace"]: document.getElementById("legOneMetricInput").value.trim(),
+              duration: document.getElementById("legOneDurationInput").value.trim(),
+              distance: document.getElementById("legOneDistanceInput").value.trim(),
+              effort: selectedEffort("legOneEffortGroup"),
+            },
+            {
+              sport: legs[1],
+              [legs[1] === "bike" ? "speed" : "pace"]: document.getElementById("legTwoMetricInput").value.trim(),
+              duration: document.getElementById("legTwoDurationInput").value.trim(),
+              distance: document.getElementById("legTwoDistanceInput").value.trim(),
+              effort: selectedEffort("legTwoEffortGroup"),
+            },
+          ],
+        }
+      : {
+          loggedISO: readLoggedDateTimeInputs(),
+          pace: document.getElementById("paceInput").value.trim(),
+          duration: document.getElementById("durationInput").value.trim(),
+          distance: document.getElementById("distanceInput").value.trim(),
+          effort: selectedEffort("effortGroup"),
+          notes: document.getElementById("notesInput").value.trim(),
+          legs: null,
+        };
 
     const wasEditing = Boolean(editingEntryId);
     let queuedOffline = false;
@@ -1069,6 +1193,7 @@
       }
     }
     editingEntryId = null;
+    logFormWorkout = null;
 
     selectedCalendarDate = localDateIso(new Date(fields.loggedISO));
     calendarMonthCursor = { year: new Date(fields.loggedISO).getFullYear(), month: new Date(fields.loggedISO).getMonth() };
@@ -1298,6 +1423,21 @@
     return chevron;
   }
 
+  /* One leg's headline stat for row subtitles/summaries, e.g.
+     "Bike 20 km @ 28 km/h" or "Run 3 km @ 4:30/km". Falls back to just
+     the duration when neither distance nor a pace/speed value was
+     logged for that leg. */
+  function summarizeLeg(leg) {
+    if (!leg) return "";
+    const label = SPORT_LABEL[leg.sport] || leg.sport;
+    const metric = leg.speed || leg.pace;
+    const parts = [label];
+    if (leg.distance) parts.push(leg.distance);
+    if (metric) parts.push("@ " + metric);
+    if (!leg.distance && !metric && leg.duration) parts.push(leg.duration);
+    return parts.join(" ");
+  }
+
   function buildHistoryRow(entry) {
     const workout = findWorkout(entry.workoutId);
     const li = document.createElement("li");
@@ -1322,7 +1462,14 @@
     const subtitleParts = [];
     if (workout) subtitleParts.push("Week " + workout.week);
     subtitleParts.push(formatDateTime(entry.loggedISO));
-    if (entry.effort) subtitleParts.push("Effort " + entry.effort + "/10");
+    if (entry.legs && entry.legs.length > 0) {
+      entry.legs.forEach((leg) => {
+        const summary = summarizeLeg(leg);
+        if (summary) subtitleParts.push(summary);
+      });
+    } else if (entry.effort) {
+      subtitleParts.push("Effort " + entry.effort + "/10");
+    }
     if (entry.pendingSync) subtitleParts.push("Pending sync");
     buildSubtitle(subtitle, subtitleParts);
     text.append(title, subtitle);
@@ -1350,10 +1497,45 @@
     document.getElementById("historyDetailTitle").textContent = workout ? workout.title : "Workout";
     document.getElementById("historyDetailWeek").textContent = workout ? "Week " + workout.week : "-";
     document.getElementById("historyDetailDate").textContent = formatDateTime(entry.loggedISO);
-    document.getElementById("historyDetailDuration").textContent = entry.duration || "-";
-    document.getElementById("historyDetailDistance").textContent = entry.distance || "-";
-    document.getElementById("historyDetailPace").textContent = entry.pace || "-";
-    document.getElementById("historyDetailEffort").textContent = entry.effort ? entry.effort + "/10" : "-";
+
+    const singleStats = document.getElementById("historyDetailSingleStats");
+    const legsContainer = document.getElementById("historyDetailLegs");
+    if (entry.legs && entry.legs.length > 0) {
+      singleStats.hidden = true;
+      legsContainer.hidden = false;
+      legsContainer.innerHTML = "";
+      entry.legs.forEach((leg) => {
+        const heading = document.createElement("h3");
+        heading.className = "section-heading";
+        heading.textContent = SPORT_LABEL[leg.sport] || leg.sport;
+        const list = document.createElement("dl");
+        list.className = "dialog-detail-list";
+        const rows = [
+          ["Duration", leg.duration || "-"],
+          ["Distance", leg.distance || "-"],
+          [leg.sport === "bike" ? "Speed" : "Pace", (leg.speed || leg.pace) || "-"],
+          ["Effort", leg.effort ? leg.effort + "/10" : "-"],
+        ];
+        rows.forEach(([label, value]) => {
+          const row = document.createElement("div");
+          const dt = document.createElement("dt");
+          dt.textContent = label;
+          const dd = document.createElement("dd");
+          dd.textContent = value;
+          row.append(dt, dd);
+          list.appendChild(row);
+        });
+        legsContainer.append(heading, list);
+      });
+    } else {
+      singleStats.hidden = false;
+      legsContainer.hidden = true;
+      legsContainer.innerHTML = "";
+      document.getElementById("historyDetailDuration").textContent = entry.duration || "-";
+      document.getElementById("historyDetailDistance").textContent = entry.distance || "-";
+      document.getElementById("historyDetailPace").textContent = entry.pace || "-";
+      document.getElementById("historyDetailEffort").textContent = entry.effort ? entry.effort + "/10" : "-";
+    }
 
     const notesWrap = document.getElementById("historyDetailNotesWrap");
     const notesText = document.getElementById("historyDetailNotes");
