@@ -1441,7 +1441,9 @@ button.thumb-row:active {
 }
 
 .profile-card .profile-subheading:not(:first-child) {
-  margin-top: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--separator);
 }
 
 .race-list {
