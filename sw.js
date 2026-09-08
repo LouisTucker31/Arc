@@ -1,4 +1,4 @@
-const CACHE_NAME = "arc-shell-v10";
+const CACHE_NAME = "arc-shell-v11";
 
 const SHELL_ASSETS = [
   "./",
@@ -18,9 +18,17 @@ const SHELL_ASSETS = [
   "assets/icons/icon-maskable.png",
 ];
 
+/* Each shell asset is fetched with {cache: "reload"} so this bypasses
+   the browser's own HTTP cache (which can otherwise serve a stale
+   copy of e.g. styles.css for up to its 10-minute max-age even to a
+   brand-new service worker's install step) and always pulls the real
+   current file from the network into the Cache Storage entry. */
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => Promise.all(SHELL_ASSETS.map((url) => cache.add(new Request(url, { cache: "reload" })))))
+      .then(() => self.skipWaiting())
   );
 });
 
