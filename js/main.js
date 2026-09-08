@@ -1831,15 +1831,16 @@
    * Personal bests
    *
    * Each of the 8 fixed PB slots (elementId, sport, target distance in
-   * that sport's own unit) is filled with the fastest time any logged
-   * entry - or brick leg - implies for that exact distance. An entry
-   * whose own logged distance doesn't match the slot still counts: its
-   * pace (run/swim) or speed (bike) is extrapolated to the slot's
-   * distance, and the fastest implied time across every entry wins.
-   * This is a deliberate simplification (an easy 20km run's pace
-   * extrapolated down to "5km" is not a real 5km effort) rather than
-   * trying to classify workout intent, since "best case across
-   * everything logged" is simple, predictable, and still useful.
+   * that sport's own unit) is filled with the fastest time implied by
+   * any logged entry - or brick leg - that actually covers at least
+   * that distance (a 10km run's pace can produce a 5km PB estimate,
+   * but a 3km run never counts toward 5km, and nothing ever counts
+   * toward Half/Full Marathon until a run that long has been logged).
+   * A slot with no qualifying entry yet shows "-" rather than a
+   * fabricated number. This still isn't a real "best 5km split within
+   * a longer run" - it's the whole logged run's average pace, applied
+   * to the slot's distance - but it never invents distances you
+   * haven't actually covered.
    * ---------------------------------------------------------------- */
 
   const PB_SLOTS = [
@@ -1854,26 +1855,32 @@
   ];
 
   /* One entry (a plain logged entry, or one brick leg) reduced to just
-     what PB matching needs: which sport it was, and the pace (seconds
-     per the sport's own unit - km for run/bike, 100m for swim) it
-     implies. This is always derived from the entry's own measured
-     distance + duration (or speed, for bike) rather than its
-     separately-typed pace field, since duration/distance is the actual
-     recorded effort and pace is just a convenience the two of them
-     already determine. Entries missing either (legacy free-text-only
-     entries included) contribute nothing. */
+     what PB matching needs: which sport it was, the distance actually
+     covered (normalised to km for run/bike, m for swim, so it can be
+     compared against a slot's own distance), and the pace (seconds per
+     the sport's own unit - km for run/bike, 100m for swim) it implies.
+     This is always derived from the entry's own measured distance +
+     duration (or speed, for bike) rather than its separately-typed
+     pace field, since duration/distance is the actual recorded effort
+     and pace is just a convenience the two of them already determine.
+     Entries missing either (legacy free-text-only entries included)
+     return null distance/pace and are filtered out by the caller. */
   function paceSecondsPerUnitForEntry(item) {
     if (SPORT_USES_SPEED[item.sport]) {
-      if (!item.speedKmh) return null;
-      return 3600 / item.speedKmh; // seconds per km
+      if (!item.speedKmh || !item.distanceValue) return { distanceInSportUnit: null, paceSeconds: null };
+      const distanceInKm = item.distanceUnit === "m" ? item.distanceValue / 1000 : item.distanceValue;
+      return { distanceInSportUnit: distanceInKm, paceSeconds: 3600 / item.speedKmh };
     }
-    if (!item.distanceValue || !item.durationSeconds) return null;
+    if (!item.distanceValue || !item.durationSeconds) return { distanceInSportUnit: null, paceSeconds: null };
     if (item.sport === "swim") {
-      const distanceIn100m = (item.distanceUnit === "km" ? item.distanceValue * 1000 : item.distanceValue) / 100;
-      return distanceIn100m > 0 ? item.durationSeconds / distanceIn100m : null;
+      const distanceInM = item.distanceUnit === "km" ? item.distanceValue * 1000 : item.distanceValue;
+      const distanceIn100m = distanceInM / 100;
+      if (distanceIn100m <= 0) return { distanceInSportUnit: null, paceSeconds: null };
+      return { distanceInSportUnit: distanceInM, paceSeconds: item.durationSeconds / distanceIn100m };
     }
     const distanceInKm = item.distanceUnit === "m" ? item.distanceValue / 1000 : item.distanceValue;
-    return distanceInKm > 0 ? item.durationSeconds / distanceInKm : null;
+    if (distanceInKm <= 0) return { distanceInSportUnit: null, paceSeconds: null };
+    return { distanceInSportUnit: distanceInKm, paceSeconds: item.durationSeconds / distanceInKm };
   }
 
   /* Flattens historyEntries into one list of {sport, distanceValue,
@@ -1897,13 +1904,18 @@
     return items;
   }
 
-  /* Computed-from-logs time for one slot, in seconds, or null if
-     nothing logged yet implies a time for it. */
+  /* Computed-from-logs time for one slot, in seconds, or null if no
+     logged entry actually covers that distance yet. Only entries whose
+     own logged distance is at least the slot's distance count - a
+     5km PB is only ever estimated from a run of 5km or more, never
+     extrapolated up from a shorter session, so a fast 1km interval
+     can't produce a fake 5km (or half/full marathon) time. */
   function computedPbSeconds(slot, items) {
     const paces = items
       .filter((item) => item.sport === slot.sport)
       .map((item) => paceSecondsPerUnitForEntry(item))
-      .filter((pace) => pace !== null && pace > 0);
+      .filter((result) => result.paceSeconds !== null && result.distanceInSportUnit >= slot.distance)
+      .map((result) => result.paceSeconds);
     if (paces.length === 0) return null;
     const bestPace = Math.min(...paces);
     const targetInSportUnit = slot.sport === "swim" ? slot.distance / 100 : slot.distance;
