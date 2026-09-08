@@ -2087,10 +2087,13 @@
     return formatPaceSeconds(seconds, sport);
   }
 
-  /* The formatted "slower–faster" range string for one zone, given the
-     flattened logged items - shared by the Paces card and the
-     per-workout target range on the Detail screen. Returns null when
-     nothing logged yet matches that zone. */
+  /* The formatted range string for one zone, given the flattened
+     logged items - shared by the Paces card and the per-workout
+     target range on the Detail screen. Returns null when nothing
+     logged yet matches that zone. Run/swim (a smaller pace-seconds
+     number is faster) print fastest end first; bike (shown as km/h,
+     where a bigger number is faster) prints slowest end first - i.e.
+     both read "the end nearer your best effort first". */
   function formatPaceZoneRange(zone, items) {
     const paces = items
       .filter((item) => item.sport === zone.sport && item.title && zone.titles.includes(item.title))
@@ -2099,12 +2102,9 @@
     if (paces.length === 0) return null;
     const anchor = Math.min(...paces);
     const [fasterSeconds, slowerSeconds] = zone.band(anchor);
-    // Always printed slower end first, faster end second, regardless
-    // of sport - for run/swim that's the bigger pace-seconds value
-    // first; for bike (shown as km/h, where bigger = faster) it's the
-    // smaller speed first, so the two ends are swapped there.
-    const first = formatPaceZoneValue(zone.sport, slowerSeconds);
-    const second = formatPaceZoneValue(zone.sport, fasterSeconds);
+    const orderedSeconds = zone.sport === "bike" ? [slowerSeconds, fasterSeconds] : [fasterSeconds, slowerSeconds];
+    const first = formatPaceZoneValue(zone.sport, orderedSeconds[0]);
+    const second = formatPaceZoneValue(zone.sport, orderedSeconds[1]);
     return `${first}–${second}`;
   }
 
@@ -2118,10 +2118,34 @@
     return PACE_ZONES.find((zone) => zone.sport === sport && zone.titles.includes(title)) || null;
   }
 
+  /* The Paces card shows a range across two lines, broken right after
+     the dash (e.g. "5:52/km-" then "6:00/km"), rather than as one long
+     line - the tiles are narrow, and this reads more like a range card
+     than a run-on string. Only this card does the two-line split; the
+     workout target boxes keep the single-line form from
+     formatPaceZoneRange. */
+  function renderPaceRangeInto(el, rangeString) {
+    el.innerHTML = "";
+    if (!rangeString) {
+      el.textContent = "-";
+      return;
+    }
+    const dashIndex = rangeString.indexOf("–");
+    if (dashIndex === -1) {
+      el.textContent = rangeString;
+      return;
+    }
+    el.append(
+      document.createTextNode(rangeString.slice(0, dashIndex + 1)),
+      document.createElement("br"),
+      document.createTextNode(rangeString.slice(dashIndex + 1))
+    );
+  }
+
   function renderPaces() {
     const items = flattenLoggableItems();
     PACE_ZONES.forEach((zone) => {
-      document.getElementById(zone.id).textContent = formatPaceZoneRange(zone, items) || "-";
+      renderPaceRangeInto(document.getElementById(zone.id), formatPaceZoneRange(zone, items));
     });
   }
 
