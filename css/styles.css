@@ -597,6 +597,11 @@ ul {
    Detail screen
    ========================================================================== */
 
+#detailBackBtn {
+  position: fixed;
+  z-index: 20;
+}
+
 .detail-body {
   padding-top: 20px;
 }
