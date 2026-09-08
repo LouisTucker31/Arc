@@ -971,6 +971,25 @@
     document.getElementById("loggedTimeInput").value = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
+  /* Prefills the Date/Time fields for a fresh log (not editing an
+     existing entry) from the workout's own scheduled date rather than
+     always today - logging a workout late (or ahead of time) should
+     default to the day it was actually scheduled for. When that date
+     is today, the time defaults to right now as before; otherwise
+     there's no meaningful "current time" for that day, so it defaults
+     to noon instead. */
+  function setLoggedDateTimeInputsForWorkout(workout) {
+    if (!workout || !workout.date) {
+      setLoggedDateTimeInputs(null);
+      return;
+    }
+    const now = new Date();
+    const isToday = workout.date === localDateIso(now);
+    const pad = (n) => String(n).padStart(2, "0");
+    document.getElementById("loggedDateInput").value = workout.date;
+    document.getElementById("loggedTimeInput").value = isToday ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : "12:00";
+  }
+
   /* Combines the two inputs back into an ISO timestamp. Falls back to
      the current moment if either field is left empty. */
   function readLoggedDateTimeInputs() {
@@ -1044,7 +1063,7 @@
     logFormWorkout = currentWorkout;
     document.getElementById("logTitle").textContent = "Log workout";
     document.getElementById("logWorkoutName").textContent = currentWorkout.title;
-    setLoggedDateTimeInputs(null);
+    setLoggedDateTimeInputsForWorkout(currentWorkout);
     const { legs } = applyLogFormForWorkout(currentWorkout);
     document.getElementById("paceInput").value = "";
     document.getElementById("durationInput").value = "";
