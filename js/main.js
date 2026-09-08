@@ -1797,10 +1797,13 @@
    * Personal details (profiles table, one row per user) and races
    * (races table, many rows per user) both load fresh every time the
    * screen opens - there's no cross-screen cache for either the way
-   * WORKOUTS/historyEntries have, since nothing else in the app reads
-   * them yet. PBs and paces are static placeholder markup for now
-   * (calculating them from logged workouts is a separate piece of
-   * work), so nothing here touches those sections.
+   * WORKOUTS/historyEntries have. Personal bests are computed from
+   * historyEntries, which is already refreshed after every save, edit
+   * and delete (via renderCalendar -> refreshHistoryData on each of
+   * those flows) regardless of which screen triggered it - so simply
+   * recomputing PBs from the current historyEntries every time the
+   * Profile screen opens is enough to keep them in sync, with no extra
+   * event wiring needed. Paces are still static placeholder markup.
    * ---------------------------------------------------------------- */
 
   let races = [];
@@ -1810,6 +1813,8 @@
     document.getElementById("profileEmail").textContent = currentSession ? currentSession.user.email : "";
     closeAllProfileSections();
     await Promise.all([loadProfileIntoForm(), loadAndRenderRaces()]);
+    await refreshHistoryData();
+    renderPersonalBests();
     goTo("profile");
   }
 
@@ -1819,6 +1824,95 @@
     document.querySelectorAll(".profile-section").forEach((section) => {
       section.classList.remove("is-open");
       section.querySelector(".profile-section-body").hidden = true;
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * Personal bests
+   *
+   * Each of the 8 fixed PB slots (elementId, sport, target distance in
+   * that sport's own unit) is filled with the fastest time any logged
+   * entry - or brick leg - implies for that exact distance. An entry
+   * whose own logged distance doesn't match the slot still counts: its
+   * pace (run/swim) or speed (bike) is extrapolated to the slot's
+   * distance, and the fastest implied time across every entry wins.
+   * This is a deliberate simplification (an easy 20km run's pace
+   * extrapolated down to "5km" is not a real 5km effort) rather than
+   * trying to classify workout intent, since "best case across
+   * everything logged" is simple, predictable, and still useful.
+   * ---------------------------------------------------------------- */
+
+  const PB_SLOTS = [
+    { id: "pbSwim400m", sport: "swim", distance: 400 },
+    { id: "pbSwim1500m", sport: "swim", distance: 1500 },
+    { id: "pbBike20km", sport: "bike", distance: 20 },
+    { id: "pbBike40km", sport: "bike", distance: 40 },
+    { id: "pbRun5km", sport: "run", distance: 5 },
+    { id: "pbRun10km", sport: "run", distance: 10 },
+    { id: "pbHalfMarathon", sport: "run", distance: 21.1 },
+    { id: "pbMarathon", sport: "run", distance: 42.2 },
+  ];
+
+  /* One entry (a plain logged entry, or one brick leg) reduced to just
+     what PB matching needs: which sport it was, and the pace (seconds
+     per the sport's own unit - km for run/bike, 100m for swim) it
+     implies. This is always derived from the entry's own measured
+     distance + duration (or speed, for bike) rather than its
+     separately-typed pace field, since duration/distance is the actual
+     recorded effort and pace is just a convenience the two of them
+     already determine. Entries missing either (legacy free-text-only
+     entries included) contribute nothing. */
+  function paceSecondsPerUnitForEntry(item) {
+    if (SPORT_USES_SPEED[item.sport]) {
+      if (!item.speedKmh) return null;
+      return 3600 / item.speedKmh; // seconds per km
+    }
+    if (!item.distanceValue || !item.durationSeconds) return null;
+    if (item.sport === "swim") {
+      const distanceIn100m = (item.distanceUnit === "km" ? item.distanceValue * 1000 : item.distanceValue) / 100;
+      return distanceIn100m > 0 ? item.durationSeconds / distanceIn100m : null;
+    }
+    const distanceInKm = item.distanceUnit === "m" ? item.distanceValue / 1000 : item.distanceValue;
+    return distanceInKm > 0 ? item.durationSeconds / distanceInKm : null;
+  }
+
+  /* Flattens historyEntries into one list of {sport, distanceValue,
+     distanceUnit, durationSeconds, speedKmh, paceSeconds} items -
+     single-discipline entries as themselves (sport read from their
+     workout's discipline_type), brick entries as their two legs
+     (sport already on each leg). Entries with no recognisable sport,
+     or whose workout can't be found, are skipped. */
+  function flattenLoggableItems() {
+    const items = [];
+    historyEntries.forEach((entry) => {
+      if (entry.legs && entry.legs.length > 0) {
+        entry.legs.forEach((leg) => items.push(leg));
+        return;
+      }
+      const workout = findWorkout(entry.workoutId);
+      const sport = workout && SPORT_LABEL[workout.disciplineType] ? workout.disciplineType : null;
+      if (!sport) return;
+      items.push(Object.assign({ sport }, entry));
+    });
+    return items;
+  }
+
+  function renderPersonalBests() {
+    const items = flattenLoggableItems();
+    PB_SLOTS.forEach((slot) => {
+      const el = document.getElementById(slot.id);
+      const paces = items
+        .filter((item) => item.sport === slot.sport)
+        .map((item) => paceSecondsPerUnitForEntry(item))
+        .filter((pace) => pace !== null && pace > 0);
+      if (paces.length === 0) {
+        el.textContent = "-";
+        return;
+      }
+      const bestPace = Math.min(...paces);
+      const targetInSportUnit = slot.sport === "swim" ? (slot.distance / 100) : slot.distance;
+      const estimatedSeconds = bestPace * targetInSportUnit;
+      el.textContent = formatDurationSeconds(estimatedSeconds);
     });
   }
 
