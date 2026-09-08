@@ -530,17 +530,17 @@
     icon.setAttribute("class", "empty-icon");
     icon.setAttribute("viewBox", "0 0 24 24");
     icon.setAttribute("aria-hidden", "true");
-    const circle = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    circle.setAttribute("d", "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z");
-    circle.setAttribute("fill", "none");
-    circle.setAttribute("stroke", "currentColor");
-    circle.setAttribute("stroke-width", "1.4");
+    icon.setAttribute("fill", "none");
+    icon.setAttribute("stroke", "currentColor");
+    icon.setAttribute("stroke-width", "1.4");
+    icon.setAttribute("stroke-linecap", "round");
+    icon.setAttribute("stroke-linejoin", "round");
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "12");
+    circle.setAttribute("r", "10");
     const hands = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    hands.setAttribute("d", "M12 7v5l3.5 2");
-    hands.setAttribute("fill", "none");
-    hands.setAttribute("stroke", "currentColor");
-    hands.setAttribute("stroke-width", "1.4");
-    hands.setAttribute("stroke-linecap", "round");
+    hands.setAttribute("d", "M12 6v6l4 2");
     icon.append(circle, hands);
 
     const title = document.createElement("p");
@@ -1446,7 +1446,7 @@
     chevron.setAttribute("viewBox", "0 0 24 24");
     chevron.setAttribute("aria-hidden", "true");
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", "M9 5l7 7-7 7");
+    path.setAttribute("d", "m9 18 6-6-6-6");
     path.setAttribute("fill", "none");
     path.setAttribute("stroke", "currentColor");
     path.setAttribute("stroke-width", "2");
