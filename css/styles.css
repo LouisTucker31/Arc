@@ -87,6 +87,19 @@ body {
   height: 100%;
 }
 
+/* Scrollbars are hidden everywhere (still fully scrollable, just not
+   drawn) so the app reads as a native app shell rather than a web
+   page on the rare device/browser that would otherwise show one -
+   iOS Safari already auto-hides its overlay scrollbar, this mainly
+   matters for desktop browsers and Android Chrome. */
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   margin: 0;
   font-family: var(--font-ui);
