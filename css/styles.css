@@ -772,6 +772,22 @@ ul {
   padding-bottom: 0;
 }
 
+.thumb-list-subheading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 0 8px;
+  font-size: var(--text-footnote);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.thumb-list-subheading:first-child {
+  padding-top: 0;
+}
+
 .detail-session {
   font-size: var(--text-body);
   color: var(--text-primary);

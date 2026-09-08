@@ -1225,8 +1225,25 @@
     emptyEl.hidden = true;
     listEl.hidden = false;
 
-    if (scheduled) listEl.appendChild(buildScheduledDayRow(scheduled));
-    logged.forEach((entry) => listEl.appendChild(buildHistoryRow(entry)));
+    if (scheduled) {
+      listEl.appendChild(buildDayListSubheading("Scheduled", "scheduled"));
+      listEl.appendChild(buildScheduledDayRow(scheduled));
+    }
+    if (logged.length > 0) {
+      listEl.appendChild(buildDayListSubheading("Logged", "logged"));
+      logged.forEach((entry) => listEl.appendChild(buildHistoryRow(entry)));
+    }
+  }
+
+  function buildDayListSubheading(label, kind) {
+    const li = document.createElement("li");
+    li.className = "thumb-list-subheading";
+    const dot = document.createElement("span");
+    dot.className = "calendar-dot calendar-dot--" + kind;
+    const text = document.createElement("span");
+    text.textContent = label;
+    li.append(dot, text);
+    return li;
   }
 
   /* A scheduled-but-not-yet-logged workout is still worth surfacing on
