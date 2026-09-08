@@ -31,4 +31,3 @@ from new_plan, (values
   ('Shakeout Run', 8, '2026-02-24'::date, 'Taper Phase', 'A very light shakeout jog to keep the legs loose ahead of race day.', null, 'assets/photos/half-marathon/easy-run.webp', 'assets/photos/half-marathon/half-marathon-week-8.webp', 20, '{"metric":{"kind":"duration","value":"20 min"},"target":{"label":"Target effort","value":"RPE 2 / 10"},"mainSet":"Very easy jog, legs loose, with no effort or pace focus."}'::jsonb),
   ('Race Day', 8, '2026-02-28'::date, 'Taper Phase', 'Race day, the half marathon itself, run at goal pace.', null, 'assets/photos/half-marathon/quality-run.webp', null, 120, '{"metric":{"kind":"distance","value":"21.1 km"},"target":{"label":"Target pace","value":"5:26-5:56 /km"},"mainSet":"Race day. Run the full half marathon at goal pace."}'::jsonb)
 ) as v(title, week, date, phase, summary, session, cover_url, week_cover_url, estimate_minutes, discipline);
-
