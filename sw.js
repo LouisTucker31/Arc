@@ -1,4 +1,4 @@
-const CACHE_NAME = "arc-shell-v11";
+const CACHE_NAME = "arc-shell-v12";
 
 const SHELL_ASSETS = [
   "./",

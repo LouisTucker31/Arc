@@ -2024,7 +2024,7 @@
     document.getElementById("addRaceBtn").addEventListener("click", () => openRaceDialog(null));
     document.getElementById("raceSaveBtn").addEventListener("click", handleSaveRace);
     document.getElementById("raceDeleteBtn").addEventListener("click", handleDeleteRace);
-    document.querySelectorAll(".profile-section-toggle").forEach((toggle) => {
+    document.querySelectorAll(".profile-section-toggle, .profile-section-chevron-btn").forEach((toggle) => {
       toggle.addEventListener("click", () => toggleProfileSection(toggle.closest(".profile-section")));
     });
 
