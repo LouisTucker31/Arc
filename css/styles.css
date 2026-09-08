@@ -1287,6 +1287,14 @@ button.thumb-row:active {
   min-width: 0;
 }
 
+#addRaceBtn {
+  display: none;
+}
+
+.profile-section.is-open #addRaceBtn {
+  display: inline-flex;
+}
+
 .profile-section-toggle {
   display: flex;
   align-items: center;
