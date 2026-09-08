@@ -176,9 +176,13 @@
       </div>
 
       <!-- Brick fields: two legs, each with its own pace/speed, duration,
-           distance and effort. Which two legs (and their sport, so the
-           right unit shows) is set in JS from the workout's discipline_type. -->
+           distance, effort and notes. Which two legs (and their sport, so
+           the right unit shows) is set in JS from the workout's
+           discipline_type. A divider between the two leg sections (and
+           above Leg 1) makes the split between them clearer than the
+           section heading alone. -->
       <div id="logBrickFields" hidden>
+        <hr class="log-leg-divider">
         <h2 class="section-heading" id="logLegOneHeading">Leg 1</h2>
         <label class="field-label" for="legOneMetricInput" id="legOneMetricLabel">Speed</label>
         <input class="field-input" type="text" id="legOneMetricInput" placeholder="e.g. 28 km/h">
@@ -194,6 +198,10 @@
           <div class="effort-group" id="legOneEffortGroup"></div>
         </fieldset>
 
+        <label class="field-label" for="legOneNotesInput">Notes (optional)</label>
+        <textarea class="field-textarea" id="legOneNotesInput" rows="3" placeholder="How did it feel? Anything to remember for next time?"></textarea>
+
+        <hr class="log-leg-divider">
         <h2 class="section-heading" id="logLegTwoHeading">Leg 2</h2>
         <label class="field-label" for="legTwoMetricInput" id="legTwoMetricLabel">Pace</label>
         <input class="field-input" type="text" id="legTwoMetricInput" placeholder="e.g. 4:30/km">
@@ -208,10 +216,15 @@
           <legend class="field-label">Effort</legend>
           <div class="effort-group" id="legTwoEffortGroup"></div>
         </fieldset>
+
+        <label class="field-label" for="legTwoNotesInput">Notes (optional)</label>
+        <textarea class="field-textarea" id="legTwoNotesInput" rows="3" placeholder="How did it feel? Anything to remember for next time?"></textarea>
       </div>
 
-      <label class="field-label" for="notesInput">Notes (optional)</label>
-      <textarea class="field-textarea" id="notesInput" rows="4" placeholder="How did it feel? Anything to remember for next time?"></textarea>
+      <div id="logSharedNotes">
+        <label class="field-label" for="notesInput">Notes (optional)</label>
+        <textarea class="field-textarea" id="notesInput" rows="4" placeholder="How did it feel? Anything to remember for next time?"></textarea>
+      </div>
     </div>
     <div class="sticky-action">
       <button type="button" class="btn btn-primary btn-block" id="saveWorkoutBtn">Save</button>

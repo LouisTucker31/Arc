@@ -921,6 +921,12 @@ button.thumb-row:active {
   padding-top: 16px;
 }
 
+.log-leg-divider {
+  border: none;
+  border-top: 1px solid var(--separator);
+  margin: 24px 0 20px;
+}
+
 .signin-body {
   display: flex;
   flex-direction: column;
@@ -1201,6 +1207,10 @@ button.thumb-row:active {
 
 #historyDetailLegs .section-heading:first-child {
   margin-top: 4px;
+}
+
+#historyDetailLegs .field-label {
+  margin: 10px 0 4px;
 }
 
 .dialog-notes {

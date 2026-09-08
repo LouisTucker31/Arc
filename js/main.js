@@ -1011,10 +1011,12 @@
     const legs = legsForDisciplineType(disciplineType);
     const singleFields = document.getElementById("logSingleFields");
     const brickFields = document.getElementById("logBrickFields");
+    const sharedNotes = document.getElementById("logSharedNotes");
 
     if (legs) {
       singleFields.hidden = true;
       brickFields.hidden = false;
+      sharedNotes.hidden = true;
       const [legOneSport, legTwoSport] = legs;
       document.getElementById("logLegOneHeading").textContent = SPORT_LABEL[legOneSport];
       document.getElementById("legOneMetricLabel").textContent = SPORT_METRIC_LABEL[legOneSport];
@@ -1027,6 +1029,7 @@
 
     singleFields.hidden = false;
     brickFields.hidden = true;
+    sharedNotes.hidden = false;
     const sport = SPORT_METRIC_LABEL[disciplineType] ? disciplineType : null;
     document.getElementById("paceInputLabel").textContent = sport ? SPORT_METRIC_LABEL[sport] : "Pace";
     document.getElementById("paceInput").placeholder = sport
@@ -1057,11 +1060,18 @@
   }
 
   function clearBrickFields() {
-    ["legOneMetricInput", "legOneDurationInput", "legOneDistanceInput", "legTwoMetricInput", "legTwoDurationInput", "legTwoDistanceInput"].forEach(
-      (id) => {
-        document.getElementById(id).value = "";
-      }
-    );
+    [
+      "legOneMetricInput",
+      "legOneDurationInput",
+      "legOneDistanceInput",
+      "legOneNotesInput",
+      "legTwoMetricInput",
+      "legTwoDurationInput",
+      "legTwoDistanceInput",
+      "legTwoNotesInput",
+    ].forEach((id) => {
+      document.getElementById(id).value = "";
+    });
   }
 
   /* Opens the Log screen pre-filled with an existing entry's values,
@@ -1087,10 +1097,12 @@
       document.getElementById("legOneMetricInput").value = (legOne && (legOne.speed || legOne.pace)) || "";
       document.getElementById("legOneDurationInput").value = (legOne && legOne.duration) || "";
       document.getElementById("legOneDistanceInput").value = (legOne && legOne.distance) || "";
+      document.getElementById("legOneNotesInput").value = (legOne && legOne.notes) || "";
       renderEffortGroup("legOneEffortGroup", legOne ? legOne.effort : null);
       document.getElementById("legTwoMetricInput").value = (legTwo && (legTwo.speed || legTwo.pace)) || "";
       document.getElementById("legTwoDurationInput").value = (legTwo && legTwo.duration) || "";
       document.getElementById("legTwoDistanceInput").value = (legTwo && legTwo.distance) || "";
+      document.getElementById("legTwoNotesInput").value = (legTwo && legTwo.notes) || "";
       renderEffortGroup("legTwoEffortGroup", legTwo ? legTwo.effort : null);
     }
     goTo("log");
@@ -1143,7 +1155,7 @@
           duration: "",
           distance: "",
           effort: null,
-          notes: document.getElementById("notesInput").value.trim(),
+          notes: "",
           legs: [
             {
               sport: legs[0],
@@ -1151,6 +1163,7 @@
               duration: document.getElementById("legOneDurationInput").value.trim(),
               distance: document.getElementById("legOneDistanceInput").value.trim(),
               effort: selectedEffort("legOneEffortGroup"),
+              notes: document.getElementById("legOneNotesInput").value.trim(),
             },
             {
               sport: legs[1],
@@ -1158,6 +1171,7 @@
               duration: document.getElementById("legTwoDurationInput").value.trim(),
               distance: document.getElementById("legTwoDistanceInput").value.trim(),
               effort: selectedEffort("legTwoEffortGroup"),
+              notes: document.getElementById("legTwoNotesInput").value.trim(),
             },
           ],
         }
@@ -1526,6 +1540,15 @@
           list.appendChild(row);
         });
         legsContainer.append(heading, list);
+        if (leg.notes) {
+          const notesLabel = document.createElement("p");
+          notesLabel.className = "field-label";
+          notesLabel.textContent = "Notes";
+          const notesText = document.createElement("p");
+          notesText.className = "dialog-notes-text";
+          notesText.textContent = leg.notes;
+          legsContainer.append(notesLabel, notesText);
+        }
       });
     } else {
       singleStats.hidden = false;
@@ -1539,7 +1562,8 @@
 
     const notesWrap = document.getElementById("historyDetailNotesWrap");
     const notesText = document.getElementById("historyDetailNotes");
-    if (entry.notes) {
+    const hasLegs = entry.legs && entry.legs.length > 0;
+    if (!hasLegs && entry.notes) {
       notesWrap.hidden = false;
       notesText.textContent = entry.notes;
     } else {
