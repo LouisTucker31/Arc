@@ -1844,14 +1844,18 @@
    * ---------------------------------------------------------------- */
 
   const PB_SLOTS = [
-    { id: "pbSwim400m", sport: "swim", distance: 400 },
+    { id: "pbSwim750m", sport: "swim", distance: 750 },
     { id: "pbSwim1500m", sport: "swim", distance: 1500 },
+    { id: "pbSwim1900m", sport: "swim", distance: 1900 },
+    { id: "pbSwim3800m", sport: "swim", distance: 3800 },
     { id: "pbBike20km", sport: "bike", distance: 20 },
     { id: "pbBike40km", sport: "bike", distance: 40 },
+    { id: "pbBike90km", sport: "bike", distance: 90 },
+    { id: "pbBike180km", sport: "bike", distance: 180 },
     { id: "pbRun5km", sport: "run", distance: 5 },
     { id: "pbRun10km", sport: "run", distance: 10 },
-    { id: "pbHalfMarathon", sport: "run", distance: 21.1 },
-    { id: "pbMarathon", sport: "run", distance: 42.2 },
+    { id: "pbRun21_1km", sport: "run", distance: 21.1 },
+    { id: "pbRun42_2km", sport: "run", distance: 42.2 },
   ];
 
   /* One entry (a plain logged entry, or one brick leg) reduced to just
