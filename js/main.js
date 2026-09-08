@@ -1815,6 +1815,7 @@
     await Promise.all([loadProfileIntoForm(), loadAndRenderRaces()]);
     await refreshHistoryData();
     await renderPersonalBests();
+    renderPaces();
     goTo("profile");
   }
 
@@ -1896,14 +1897,14 @@
   function flattenLoggableItems() {
     const items = [];
     historyEntries.forEach((entry) => {
+      const workout = findWorkout(entry.workoutId);
       if (entry.legs && entry.legs.length > 0) {
-        entry.legs.forEach((leg) => items.push(leg));
+        entry.legs.forEach((leg) => items.push(Object.assign({ title: workout ? workout.title : null }, leg)));
         return;
       }
-      const workout = findWorkout(entry.workoutId);
       const sport = workout && SPORT_LABEL[workout.disciplineType] ? workout.disciplineType : null;
       if (!sport) return;
-      items.push(Object.assign({ sport }, entry));
+      items.push(Object.assign({ sport, title: workout.title }, entry));
     });
     return items;
   }
@@ -1956,6 +1957,112 @@
     if (overridesChanged && currentSession) {
       await savePbOverrides(currentSession.user.id, pbOverrides);
     }
+  }
+
+  /* ------------------------------------------------------------------
+   * Paces
+   *
+   * Each of the 9 rows (Easy/Threshold-or-Tempo/Race pace x Run/Bike/
+   * Swim) gets its own anchor pace: the fastest pace among whichever
+   * workout titles represent that zone's effort in this training plan
+   * (an "Easy Run" is an easy-effort session by design, a "Quality
+   * Run"/"Interval Run" is a threshold-effort session, and so on), then
+   * shown as a range around that anchor. There's no dedicated CSS test
+   * (400m then 200m time trial) logged, so swim CSS uses the same
+   * "fastest pace from threshold-effort-titled swims" anchor as
+   * everything else here, which is a well-established practical
+   * substitute. A row with no matching titled session logged yet shows
+   * "-" rather than inventing a number - consistent with how PBs work. */
+  const PACE_ZONES = [
+    {
+      id: "paceRunEasy",
+      sport: "run",
+      titles: ["Easy Run"],
+      band: (seconds) => [seconds - 3, seconds + 5],
+    },
+    {
+      id: "paceRunThreshold",
+      sport: "run",
+      titles: ["Quality Run", "Interval Run", "Strides Run"],
+      band: (seconds) => [seconds - 3, seconds + 5],
+    },
+    {
+      id: "paceRunRace",
+      sport: "run",
+      titles: ["Race-Pace Run"],
+      band: (seconds) => [seconds - 3, seconds + 5],
+    },
+    {
+      id: "paceBikeEasy",
+      sport: "bike",
+      titles: ["Endurance Bike"],
+      band: (seconds) => [seconds - 3, seconds + 5],
+    },
+    {
+      id: "paceBikeTempo",
+      sport: "bike",
+      titles: ["Quality Bike", "Tempo Bike"],
+      band: (seconds) => [seconds - 3, seconds + 5],
+    },
+    {
+      id: "paceBikeRace",
+      sport: "bike",
+      titles: ["Race-Pace Bike"],
+      band: (seconds) => [seconds - 3, seconds + 5],
+    },
+    {
+      id: "paceSwimEasy",
+      sport: "swim",
+      titles: ["Pool Swim", "Easy Swim", "Open Water Swim"],
+      band: (seconds) => [seconds - 2, seconds + 4],
+    },
+    {
+      id: "paceSwimCss",
+      sport: "swim",
+      titles: ["Interval Swim", "Endurance Swim"],
+      band: (seconds) => [seconds - 2, seconds + 4],
+    },
+    {
+      id: "paceSwimRace",
+      sport: "swim",
+      titles: ["Race-Pace Swim"],
+      band: (seconds) => [seconds - 2, seconds + 4],
+    },
+  ];
+
+  /* Bike's anchor/band is in speed (km/h), where faster means a
+     bigger number - the band is applied around the anchor the same
+     way, but formatted and read the opposite direction from a pace. */
+  function formatPaceZoneValue(sport, seconds) {
+    if (sport === "bike") {
+      const kmh = 3600 / seconds;
+      return kmh.toFixed(1) + " km/h";
+    }
+    return formatPaceSeconds(seconds, sport);
+  }
+
+  function renderPaces() {
+    const items = flattenLoggableItems();
+    PACE_ZONES.forEach((zone) => {
+      const el = document.getElementById(zone.id);
+      const paces = items
+        .filter((item) => item.sport === zone.sport && item.title && zone.titles.includes(item.title))
+        .map((item) => paceSecondsPerUnitForEntry(item).paceSeconds)
+        .filter((pace) => pace !== null && pace > 0);
+      if (paces.length === 0) {
+        el.textContent = "-";
+        return;
+      }
+      const anchor = Math.min(...paces);
+      const [fasterSeconds, slowerSeconds] = zone.band(anchor);
+      // Always printed slower end first, faster end second, regardless
+      // of sport - for run/swim that's the bigger pace-seconds value
+      // first; for bike (shown as km/h, where bigger = faster) it's
+      // the smaller speed first, so the two ends are swapped there.
+      const first = formatPaceZoneValue(zone.sport, slowerSeconds);
+      const second = formatPaceZoneValue(zone.sport, fasterSeconds);
+      el.textContent = `${first}–${second}`;
+    });
   }
 
   function toggleProfileSection(section) {

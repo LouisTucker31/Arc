@@ -441,25 +441,25 @@
           <svg class="profile-section-chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
         </button>
         <div class="profile-section-body" hidden>
-          <p class="profile-section-note">Calculated automatically from your logged workouts once you start logging - coming soon.</p>
-          <div class="profile-card profile-card--placeholder">
+          <p class="profile-section-note">Pace ranges calculated automatically from your logged workouts, grouped by session type.</p>
+          <div class="profile-card">
             <h3 class="profile-subheading">Run</h3>
             <div class="pace-grid">
-              <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
-              <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
-              <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value" id="paceRunEasy">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value" id="paceRunThreshold">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value" id="paceRunRace">-</span></div>
             </div>
             <h3 class="profile-subheading">Bike</h3>
             <div class="pace-grid">
-              <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
-              <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
-              <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value" id="paceBikeEasy">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Tempo</span><span class="pace-item-value" id="paceBikeTempo">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value" id="paceBikeRace">-</span></div>
             </div>
             <h3 class="profile-subheading">Swim</h3>
             <div class="pace-grid">
-              <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
-              <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
-              <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value" id="paceSwimEasy">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">CSS</span><span class="pace-item-value" id="paceSwimCss">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value" id="paceSwimRace">-</span></div>
             </div>
           </div>
         </div>
