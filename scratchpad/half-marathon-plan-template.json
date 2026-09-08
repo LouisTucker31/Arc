@@ -1,0 +1,45 @@
+{
+  "_instructions": [
+    "Fill in `plan` and `workouts` below with the real half marathon training plan data.",
+    "workouts must contain exactly 5, 6 or 7 rows per week (however many training days per week the plan actually has) x however many weeks the plan runs.",
+    "date is ISO format YYYY-MM-DD, one row per real calendar day the plan schedules a session.",
+    "week is the week number (1, 2, 3...), matching the *.webp week-banner files already on disk.",
+    "phase is a short label shown as a tag on the week tile, e.g. 'Base Phase', 'Build Phase', 'Peak Phase', 'Taper Phase' -- reuse this same small set of phase names across weeks, don't invent a unique phase per week.",
+    "cover_url must be one of the three existing session photos: assets/photos/half-marathon/easy-run.webp, assets/photos/half-marathon/long-run.webp, or assets/photos/half-marathon/quality-run.webp -- pick whichever best matches that session's intensity (easy run = easy-run.webp, long steady run = long-run.webp, intervals/tempo/race-pace = quality-run.webp). If a session is genuinely not a run (e.g. a rest or cross-training day), skip that row entirely -- only real training-day workouts belong in this file, not rest days.",
+    "week_cover_url is only set on the FIRST workout of each week (by date) -- set it to assets/photos/half-marathon/half-marathon-week-<N>.webp for that one row, and leave it null on every other workout that same week.",
+    "discipline is a JSON object describing the structured session shown on the workout's detail screen. Shape:",
+    "  metric: { kind: 'duration' | 'distance', value: '<display string, e.g. \"40 min\" or \"8 km\">' } -- REQUIRED, this is the pill shown at the top of the screen.",
+    "  target: { label: '<e.g. \"Target pace\" or \"Target effort\">', value: '<e.g. \"5:30 /km\" or \"RPE 6/10\">' } -- OPTIONAL, omit entirely (don't include the key) if there's no specific target for this session.",
+    "  warmup, mainSet, cooldown: plain instructional sentences, each OPTIONAL (omit the key if not applicable). Write these as clear coaching instructions in the app's own voice (e.g. '10 min easy jogging.' / '5 x 1km at target pace, 2 min recovery jog between reps.'), not pasted verbatim from a spreadsheet's casual notes.",
+    "estimate_minutes is a rough whole-number duration for the session in minutes (used only as a fallback label on the Week screen row, alongside the photo).",
+    "title is the short session name shown throughout the app, e.g. 'Easy Run', 'Long Run', 'Quality Run', 'Race-Pace Run'.",
+    "summary is one sentence shown just under the title on the workout's detail screen, describing the session's purpose in plain language.",
+    "session is a legacy fallback field -- leave it null on every row (discipline is what actually renders; session is only used if discipline is entirely missing, which should never happen here)."
+  ],
+
+  "plan": {
+    "title": "Half Marathon Plan",
+    "cover_url": "assets/photos/half-marathon/half-marathon-plan.webp",
+    "estimate_weeks": 8
+  },
+
+  "workouts": [
+    {
+      "_example": "One example row shown for shape reference -- delete this key and replace the array with all real rows for every week.",
+      "title": "Easy Run",
+      "week": 1,
+      "date": "2026-01-05",
+      "phase": "Base Phase",
+      "summary": "An easy, conversational-pace run to build aerobic base without adding fatigue.",
+      "session": null,
+      "cover_url": "assets/photos/half-marathon/easy-run.webp",
+      "week_cover_url": "assets/photos/half-marathon/half-marathon-week-1.webp",
+      "estimate_minutes": 30,
+      "discipline": {
+        "metric": { "kind": "duration", "value": "30 min" },
+        "target": { "label": "Target effort", "value": "RPE 3-4 / 10" },
+        "mainSet": "Easy, continuous running at a conversational effort."
+      }
+    }
+  ]
+}
