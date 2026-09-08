@@ -1007,6 +1007,58 @@ button.thumb-row:active {
   font-size: var(--text-body);
 }
 
+/* Segmented h:mm:ss / m:ss entry (duration, pace) - a row of small
+   digit boxes joined by ":" separators, built by buildTimeInputGroup in
+   main.js. Each box holds up to 2 digits and auto-advances to the next
+   on input, matching how a native time picker feels without the 24h
+   cap or missing "per unit" framing a real <input type="time"> has. */
+.time-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.time-input-segment {
+  width: 56px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-title-3);
+  font-weight: 700;
+  text-align: center;
+}
+
+.time-input-sep {
+  font-size: var(--text-title-3);
+  font-weight: 700;
+  color: var(--text-tertiary);
+}
+
+.number-unit-field {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.number-unit-field .field-input {
+  margin-bottom: 0;
+  padding-right: 56px;
+}
+
+.number-unit-suffix {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  font-size: var(--text-subheadline);
+  font-weight: 600;
+  pointer-events: none;
+}
+
 /* iOS/Safari renders a date/time input's value right-aligned inside a
    shadow-DOM wrapper that text-align doesn't reach directly - this
    pseudo-element is the one documented hook for it. */

@@ -44,6 +44,11 @@ async function updateHistoryEntry(id, fields) {
       duration: fields.duration,
       distance: fields.distance,
       effort: fields.effort,
+      duration_seconds: fields.durationSeconds ?? null,
+      distance_value: fields.distanceValue ?? null,
+      distance_unit: fields.distanceUnit ?? null,
+      pace_seconds: fields.paceSeconds ?? null,
+      speed_kmh: fields.speedKmh ?? null,
       notes: fields.notes,
       legs: fields.legs || null,
     })

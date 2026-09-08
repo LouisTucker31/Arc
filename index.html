@@ -157,17 +157,33 @@
       </div>
 
       <!-- Single-discipline fields (run / bike / swim). Label text and
-           the pace/speed field's id-linked label are swapped in JS to
-           match the workout's sport. -->
+           the pace/speed field's unit are swapped in JS to match the
+           workout's sport. Duration and pace are segmented digit-entry
+           groups (built by buildTimeInputGroup); speed and distance are
+           plain numbers with a unit suffix - see the "Structured
+           duration/pace/speed/distance inputs" comment in main.js for
+           how these are read back out. -->
       <div id="logSingleFields">
-        <label class="field-label" for="paceInput" id="paceInputLabel">Pace</label>
-        <input class="field-input" type="text" id="paceInput" placeholder="e.g. Easy, steady, 5:30/km">
+        <div id="paceInputWrap">
+          <label class="field-label" id="paceInputLabel">Pace</label>
+          <div class="time-input-group" id="paceInputGroup" data-segments="2"></div>
+        </div>
+        <div id="speedInputWrap" hidden>
+          <label class="field-label">Speed</label>
+          <div class="number-unit-field">
+            <input class="field-input" type="number" inputmode="decimal" step="0.1" min="0" id="speedInput" placeholder="e.g. 28">
+            <span class="number-unit-suffix">km/h</span>
+          </div>
+        </div>
 
-        <label class="field-label" for="durationInput">Duration</label>
-        <input class="field-input" type="text" id="durationInput" placeholder="e.g. 35 min">
+        <label class="field-label">Duration</label>
+        <div class="time-input-group" id="durationInputGroup" data-segments="3"></div>
 
-        <label class="field-label" for="distanceInput">Distance</label>
-        <input class="field-input" type="text" id="distanceInput" placeholder="e.g. 5 km">
+        <label class="field-label" id="distanceInputLabel">Distance</label>
+        <div class="number-unit-field">
+          <input class="field-input" type="number" inputmode="decimal" step="0.01" min="0" id="distanceInput" placeholder="e.g. 5">
+          <span class="number-unit-suffix" id="distanceInputUnit">km</span>
+        </div>
 
         <fieldset class="effort-fieldset">
           <legend class="field-label">Effort</legend>
@@ -184,14 +200,26 @@
       <div id="logBrickFields" hidden>
         <hr class="log-leg-divider">
         <h2 class="section-heading" id="logLegOneHeading">Leg 1</h2>
-        <label class="field-label" for="legOneMetricInput" id="legOneMetricLabel">Speed</label>
-        <input class="field-input" type="text" id="legOneMetricInput" placeholder="e.g. 28 km/h">
+        <div id="legOnePaceWrap" hidden>
+          <label class="field-label" id="legOnePaceLabel">Pace</label>
+          <div class="time-input-group" id="legOnePaceGroup" data-segments="2"></div>
+        </div>
+        <div id="legOneSpeedWrap" hidden>
+          <label class="field-label">Speed</label>
+          <div class="number-unit-field">
+            <input class="field-input" type="number" inputmode="decimal" step="0.1" min="0" id="legOneSpeedInput" placeholder="e.g. 28">
+            <span class="number-unit-suffix">km/h</span>
+          </div>
+        </div>
 
-        <label class="field-label" for="legOneDurationInput">Duration</label>
-        <input class="field-input" type="text" id="legOneDurationInput" placeholder="e.g. 40 min">
+        <label class="field-label">Duration</label>
+        <div class="time-input-group" id="legOneDurationGroup" data-segments="3"></div>
 
-        <label class="field-label" for="legOneDistanceInput">Distance</label>
-        <input class="field-input" type="text" id="legOneDistanceInput" placeholder="e.g. 20 km">
+        <label class="field-label" id="legOneDistanceLabel">Distance</label>
+        <div class="number-unit-field">
+          <input class="field-input" type="number" inputmode="decimal" step="0.01" min="0" id="legOneDistanceInput" placeholder="e.g. 20">
+          <span class="number-unit-suffix" id="legOneDistanceUnit">km</span>
+        </div>
 
         <fieldset class="effort-fieldset">
           <legend class="field-label">Effort</legend>
@@ -203,14 +231,26 @@
 
         <hr class="log-leg-divider">
         <h2 class="section-heading" id="logLegTwoHeading">Leg 2</h2>
-        <label class="field-label" for="legTwoMetricInput" id="legTwoMetricLabel">Pace</label>
-        <input class="field-input" type="text" id="legTwoMetricInput" placeholder="e.g. 4:30/km">
+        <div id="legTwoPaceWrap" hidden>
+          <label class="field-label" id="legTwoPaceLabel">Pace</label>
+          <div class="time-input-group" id="legTwoPaceGroup" data-segments="2"></div>
+        </div>
+        <div id="legTwoSpeedWrap" hidden>
+          <label class="field-label">Speed</label>
+          <div class="number-unit-field">
+            <input class="field-input" type="number" inputmode="decimal" step="0.1" min="0" id="legTwoSpeedInput" placeholder="e.g. 28">
+            <span class="number-unit-suffix">km/h</span>
+          </div>
+        </div>
 
-        <label class="field-label" for="legTwoDurationInput">Duration</label>
-        <input class="field-input" type="text" id="legTwoDurationInput" placeholder="e.g. 15 min">
+        <label class="field-label">Duration</label>
+        <div class="time-input-group" id="legTwoDurationGroup" data-segments="3"></div>
 
-        <label class="field-label" for="legTwoDistanceInput">Distance</label>
-        <input class="field-input" type="text" id="legTwoDistanceInput" placeholder="e.g. 3 km">
+        <label class="field-label" id="legTwoDistanceLabel">Distance</label>
+        <div class="number-unit-field">
+          <input class="field-input" type="number" inputmode="decimal" step="0.01" min="0" id="legTwoDistanceInput" placeholder="e.g. 3">
+          <span class="number-unit-suffix" id="legTwoDistanceUnit">km</span>
+        </div>
 
         <fieldset class="effort-fieldset">
           <legend class="field-label">Effort</legend>
@@ -432,7 +472,7 @@
     <dl class="dialog-detail-list" id="historyDetailSingleStats">
       <div><dt>Duration</dt><dd id="historyDetailDuration"></dd></div>
       <div><dt>Distance</dt><dd id="historyDetailDistance"></dd></div>
-      <div><dt>Pace</dt><dd id="historyDetailPace"></dd></div>
+      <div><dt id="historyDetailPaceLabel">Pace</dt><dd id="historyDetailPace"></dd></div>
       <div><dt>Effort</dt><dd id="historyDetailEffort"></dd></div>
     </dl>
     <div id="historyDetailLegs" hidden></div>
