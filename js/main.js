@@ -878,6 +878,26 @@
     return metric.value;
   }
 
+  /* True once a workout's own scheduled date is after today - only
+     future workouts get their plan target swapped for a computed pace
+     range, so logged history for a workout that already happened
+     never has its displayed target rewritten after the fact. */
+  function isFutureWorkout(workout) {
+    return Boolean(workout && workout.date && workout.date > todayIso());
+  }
+
+  /* For a future single-discipline workout, swaps the plan's static
+     target value for the computed pace range from its matching zone
+     (by workout title) when one exists - past workouts, and any
+     workout whose title isn't a recognised zone, keep the plan's own
+     target value unchanged. */
+  function targetValueForWorkout(workout, sport, planValue) {
+    if (!isFutureWorkout(workout)) return planValue;
+    const zone = findZoneForTitle(sport, workout.title);
+    if (!zone) return planValue;
+    return formatPaceZoneRange(zone, flattenLoggableItems()) || planValue;
+  }
+
   function renderDetailTarget(workout) {
     const container = document.getElementById("detailTarget");
     const target = workout.discipline ? primaryTargetFor(workout.discipline) : null;
@@ -893,15 +913,23 @@
     label.textContent = target.label;
     const value = document.createElement("p");
     value.className = "detail-target-value";
-    value.textContent = target.value;
+    const legs = BRICK_LEG_ORDER.filter((leg) => workout.discipline[leg]);
+    const sport = legs.length > 0 ? legs[0] : workout.disciplineType;
+    value.textContent = targetValueForWorkout(workout, sport, target.value);
     container.append(label, value);
   }
 
   /* Builds one discipline's Warm-up / Main Set / Cool-down blocks
      (each optional) into the given container, under an optional
      heading. Used directly for run/swim/bike, and once per leg for a
-     brick session (e.g. Bike then Run, or Swim then Bike). */
-  function appendDisciplineStructure(container, discipline, headingText) {
+     brick session (e.g. Bike then Run, or Swim then Bike). When legSport
+     and workout are both given (the brick case) and the workout is a
+     future one whose title matches a recognised pace zone for that
+     leg's sport, a computed target range is shown under the heading -
+     mirroring the single-discipline Target box, but per leg, since a
+     brick's two legs can be in different zones (e.g. an easy bike into
+     a quality run). */
+  function appendDisciplineStructure(container, discipline, headingText, legSport, workout) {
     const hasStructure = discipline.warmup || discipline.mainSet || discipline.cooldown;
     if (!hasStructure) return;
 
@@ -910,6 +938,24 @@
       heading.className = "section-heading";
       heading.textContent = headingText;
       container.appendChild(heading);
+    }
+
+    if (legSport && workout && isFutureWorkout(workout)) {
+      const zone = findZoneForTitle(legSport, workout.title);
+      const range = zone ? formatPaceZoneRange(zone, flattenLoggableItems()) : null;
+      if (range) {
+        const targetLabel = discipline.target ? discipline.target.label : legSport === "bike" ? "Target speed" : "Target pace";
+        const targetBlock = document.createElement("div");
+        targetBlock.className = "detail-leg-target";
+        const label = document.createElement("p");
+        label.className = "field-label";
+        label.textContent = targetLabel;
+        const value = document.createElement("p");
+        value.className = "detail-target-value";
+        value.textContent = range;
+        targetBlock.append(label, value);
+        container.appendChild(targetBlock);
+      }
     }
 
     [
@@ -956,7 +1002,7 @@
       // rather than the single flat discipline used by a plain
       // run/swim/bike session.
       legs.forEach((leg) => {
-        appendDisciplineStructure(container, workout.discipline[leg], legLabels[leg]);
+        appendDisciplineStructure(container, workout.discipline[leg], legLabels[leg], leg, workout);
       });
       return;
     }
@@ -2041,27 +2087,41 @@
     return formatPaceSeconds(seconds, sport);
   }
 
+  /* The formatted "slower–faster" range string for one zone, given the
+     flattened logged items - shared by the Paces card and the
+     per-workout target range on the Detail screen. Returns null when
+     nothing logged yet matches that zone. */
+  function formatPaceZoneRange(zone, items) {
+    const paces = items
+      .filter((item) => item.sport === zone.sport && item.title && zone.titles.includes(item.title))
+      .map((item) => paceSecondsPerUnitForEntry(item).paceSeconds)
+      .filter((pace) => pace !== null && pace > 0);
+    if (paces.length === 0) return null;
+    const anchor = Math.min(...paces);
+    const [fasterSeconds, slowerSeconds] = zone.band(anchor);
+    // Always printed slower end first, faster end second, regardless
+    // of sport - for run/swim that's the bigger pace-seconds value
+    // first; for bike (shown as km/h, where bigger = faster) it's the
+    // smaller speed first, so the two ends are swapped there.
+    const first = formatPaceZoneValue(zone.sport, slowerSeconds);
+    const second = formatPaceZoneValue(zone.sport, fasterSeconds);
+    return `${first}–${second}`;
+  }
+
+  /* Matches a workout's own title (or one brick leg's sport, matched
+     against its parent workout's title - a "Bike-to-Run Brick" is the
+     title both legs share) to the zone whose titles list contains it.
+     Falls back to null when the title isn't one of the recognised
+     easy/threshold/race-pace session names for that sport - e.g.
+     Race Day, or a title not yet added to PACE_ZONES. */
+  function findZoneForTitle(sport, title) {
+    return PACE_ZONES.find((zone) => zone.sport === sport && zone.titles.includes(title)) || null;
+  }
+
   function renderPaces() {
     const items = flattenLoggableItems();
     PACE_ZONES.forEach((zone) => {
-      const el = document.getElementById(zone.id);
-      const paces = items
-        .filter((item) => item.sport === zone.sport && item.title && zone.titles.includes(item.title))
-        .map((item) => paceSecondsPerUnitForEntry(item).paceSeconds)
-        .filter((pace) => pace !== null && pace > 0);
-      if (paces.length === 0) {
-        el.textContent = "-";
-        return;
-      }
-      const anchor = Math.min(...paces);
-      const [fasterSeconds, slowerSeconds] = zone.band(anchor);
-      // Always printed slower end first, faster end second, regardless
-      // of sport - for run/swim that's the bigger pace-seconds value
-      // first; for bike (shown as km/h, where bigger = faster) it's
-      // the smaller speed first, so the two ends are swapped there.
-      const first = formatPaceZoneValue(zone.sport, slowerSeconds);
-      const second = formatPaceZoneValue(zone.sport, fasterSeconds);
-      el.textContent = `${first}–${second}`;
+      document.getElementById(zone.id).textContent = formatPaceZoneRange(zone, items) || "-";
     });
   }
 

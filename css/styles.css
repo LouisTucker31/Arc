@@ -807,6 +807,10 @@ ul {
   line-height: 1.55;
 }
 
+.detail-leg-target {
+  margin-bottom: 16px;
+}
+
 .detail-structure-block {
   margin-bottom: 16px;
 }
