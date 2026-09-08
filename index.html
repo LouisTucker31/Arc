@@ -289,106 +289,125 @@
       </div>
 
       <!-- Personal details -->
-      <div class="profile-section">
-        <h2 class="section-heading">Personal details</h2>
-        <div class="profile-card">
-          <label class="field-label" for="profileNameInput">Name</label>
-          <input class="field-input" type="text" id="profileNameInput" placeholder="Your name">
+      <div class="profile-section" data-section="details">
+        <button type="button" class="profile-section-toggle">
+          <h2 class="section-heading">Personal details</h2>
+          <svg class="profile-section-chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="profile-section-body" hidden>
+          <div class="profile-card">
+            <label class="field-label" for="profileNameInput">Name</label>
+            <input class="field-input" type="text" id="profileNameInput" placeholder="Your name">
 
-          <label class="field-label" for="profileDobInput">Date of birth</label>
-          <input class="field-input" type="date" id="profileDobInput">
+            <label class="field-label" for="profileDobInput">Date of birth</label>
+            <input class="field-input" type="date" id="profileDobInput">
 
-          <div class="field-row">
-            <div class="field-row-item">
-              <label class="field-label" for="profileHeightInput">Height (cm)</label>
-              <input class="field-input" type="number" inputmode="decimal" id="profileHeightInput" placeholder="e.g. 178">
+            <div class="field-row">
+              <div class="field-row-item">
+                <label class="field-label" for="profileHeightInput">Height (cm)</label>
+                <input class="field-input" type="number" inputmode="decimal" id="profileHeightInput" placeholder="e.g. 178">
+              </div>
+              <div class="field-row-item">
+                <label class="field-label" for="profileWeightInput">Weight (kg)</label>
+                <input class="field-input" type="number" inputmode="decimal" id="profileWeightInput" placeholder="e.g. 72">
+              </div>
             </div>
-            <div class="field-row-item">
-              <label class="field-label" for="profileWeightInput">Weight (kg)</label>
-              <input class="field-input" type="number" inputmode="decimal" id="profileWeightInput" placeholder="e.g. 72">
-            </div>
+
+            <label class="field-label" for="profileGenderInput">Gender</label>
+            <select class="field-input field-select" id="profileGenderInput">
+              <option value="">Prefer not to say</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="non_binary">Non-binary</option>
+              <option value="other">Other</option>
+            </select>
+
+            <button type="button" class="btn btn-primary btn-block" id="profileSaveDetailsBtn">Save details</button>
+            <p class="save-banner" id="profileDetailsSaveBanner" hidden></p>
           </div>
-
-          <label class="field-label" for="profileGenderInput">Gender</label>
-          <select class="field-input field-select" id="profileGenderInput">
-            <option value="">Prefer not to say</option>
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-            <option value="non_binary">Non-binary</option>
-            <option value="other">Other</option>
-          </select>
-
-          <button type="button" class="btn btn-primary btn-block" id="profileSaveDetailsBtn">Save details</button>
-          <p class="save-banner" id="profileDetailsSaveBanner" hidden></p>
         </div>
       </div>
 
       <!-- Races -->
-      <div class="profile-section">
+      <div class="profile-section" data-section="races">
         <div class="profile-section-header">
-          <h2 class="section-heading">Races</h2>
+          <button type="button" class="profile-section-toggle">
+            <h2 class="section-heading">Races</h2>
+            <svg class="profile-section-chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
           <button type="button" class="icon-btn icon-btn--muted" id="addRaceBtn" aria-label="Add race">
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
           </button>
         </div>
-
-        <div class="profile-card">
-          <h3 class="profile-subheading">Upcoming</h3>
-          <div class="empty-state" id="upcomingRacesEmpty" hidden>
-            <p class="empty-text">No upcoming races added yet.</p>
+        <div class="profile-section-body" hidden>
+          <div class="profile-card">
+            <h3 class="profile-subheading">Upcoming</h3>
+            <div class="empty-state" id="upcomingRacesEmpty" hidden>
+              <p class="empty-text">No upcoming races added yet.</p>
+            </div>
+            <ul class="race-list" id="upcomingRaceList"></ul>
           </div>
-          <ul class="race-list" id="upcomingRaceList"></ul>
-        </div>
 
-        <div class="profile-card">
-          <h3 class="profile-subheading">Past</h3>
-          <div class="empty-state" id="pastRacesEmpty" hidden>
-            <p class="empty-text">No past races added yet.</p>
+          <div class="profile-card">
+            <h3 class="profile-subheading">Past</h3>
+            <div class="empty-state" id="pastRacesEmpty" hidden>
+              <p class="empty-text">No past races added yet.</p>
+            </div>
+            <ul class="race-list" id="pastRaceList"></ul>
           </div>
-          <ul class="race-list" id="pastRaceList"></ul>
         </div>
       </div>
 
       <!-- Personal bests -->
-      <div class="profile-section">
-        <h2 class="section-heading">Personal bests</h2>
-        <p class="profile-section-note">Calculated automatically from your logged workouts once you start logging - coming soon.</p>
-        <div class="profile-card profile-card--placeholder">
-          <div class="pb-grid">
-            <div class="pb-item"><span class="pb-item-label">Swim 400m</span><span class="pb-item-value">-</span></div>
-            <div class="pb-item"><span class="pb-item-label">Swim 1500m</span><span class="pb-item-value">-</span></div>
-            <div class="pb-item"><span class="pb-item-label">Bike 20km</span><span class="pb-item-value">-</span></div>
-            <div class="pb-item"><span class="pb-item-label">Bike 40km</span><span class="pb-item-value">-</span></div>
-            <div class="pb-item"><span class="pb-item-label">Run 5km</span><span class="pb-item-value">-</span></div>
-            <div class="pb-item"><span class="pb-item-label">Run 10km</span><span class="pb-item-value">-</span></div>
-            <div class="pb-item"><span class="pb-item-label">Half Marathon</span><span class="pb-item-value">-</span></div>
-            <div class="pb-item"><span class="pb-item-label">Marathon</span><span class="pb-item-value">-</span></div>
+      <div class="profile-section" data-section="pbs">
+        <button type="button" class="profile-section-toggle">
+          <h2 class="section-heading">Personal bests</h2>
+          <svg class="profile-section-chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="profile-section-body" hidden>
+          <p class="profile-section-note">Calculated automatically from your logged workouts once you start logging - coming soon.</p>
+          <div class="profile-card profile-card--placeholder">
+            <div class="pb-grid">
+              <div class="pb-item"><span class="pb-item-label">Swim 400m</span><span class="pb-item-value">-</span></div>
+              <div class="pb-item"><span class="pb-item-label">Swim 1500m</span><span class="pb-item-value">-</span></div>
+              <div class="pb-item"><span class="pb-item-label">Bike 20km</span><span class="pb-item-value">-</span></div>
+              <div class="pb-item"><span class="pb-item-label">Bike 40km</span><span class="pb-item-value">-</span></div>
+              <div class="pb-item"><span class="pb-item-label">Run 5km</span><span class="pb-item-value">-</span></div>
+              <div class="pb-item"><span class="pb-item-label">Run 10km</span><span class="pb-item-value">-</span></div>
+              <div class="pb-item"><span class="pb-item-label">Half Marathon</span><span class="pb-item-value">-</span></div>
+              <div class="pb-item"><span class="pb-item-label">Marathon</span><span class="pb-item-value">-</span></div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Paces -->
-      <div class="profile-section">
-        <h2 class="section-heading">Paces</h2>
-        <p class="profile-section-note">Calculated automatically from your logged workouts once you start logging - coming soon.</p>
-        <div class="profile-card profile-card--placeholder">
-          <h3 class="profile-subheading">Run</h3>
-          <div class="pace-grid">
-            <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
-            <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
-            <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
-          </div>
-          <h3 class="profile-subheading">Bike</h3>
-          <div class="pace-grid">
-            <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
-            <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
-            <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
-          </div>
-          <h3 class="profile-subheading">Swim</h3>
-          <div class="pace-grid">
-            <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
-            <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
-            <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+      <div class="profile-section" data-section="paces">
+        <button type="button" class="profile-section-toggle">
+          <h2 class="section-heading">Paces</h2>
+          <svg class="profile-section-chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="profile-section-body" hidden>
+          <p class="profile-section-note">Calculated automatically from your logged workouts once you start logging - coming soon.</p>
+          <div class="profile-card profile-card--placeholder">
+            <h3 class="profile-subheading">Run</h3>
+            <div class="pace-grid">
+              <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+            </div>
+            <h3 class="profile-subheading">Bike</h3>
+            <div class="pace-grid">
+              <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+            </div>
+            <h3 class="profile-subheading">Swim</h3>
+            <div class="pace-grid">
+              <div class="pace-item"><span class="pace-item-label">Easy</span><span class="pace-item-value">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Threshold</span><span class="pace-item-value">-</span></div>
+              <div class="pace-item"><span class="pace-item-label">Race pace</span><span class="pace-item-value">-</span></div>
+            </div>
           </div>
         </div>
       </div>

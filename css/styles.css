@@ -1003,6 +1003,15 @@ button.thumb-row:active {
   color: var(--text-primary);
   color-scheme: dark;
   margin-bottom: 18px;
+  font-family: inherit;
+  font-size: var(--text-body);
+}
+
+/* iOS/Safari renders a date/time input's value right-aligned inside a
+   shadow-DOM wrapper that text-align doesn't reach directly - this
+   pseudo-element is the one documented hook for it. */
+.field-input::-webkit-date-and-time-value {
+  text-align: left;
 }
 
 .field-row {
@@ -1270,11 +1279,41 @@ button.thumb-row:active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  gap: 8px;
 }
 
-.profile-section-header .section-heading {
+.profile-section-header .profile-section-toggle {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+}
+
+.profile-section-toggle .section-heading {
   margin-bottom: 0;
+}
+
+.profile-section-chevron {
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.profile-section.is-open .profile-section-chevron {
+  transform: rotate(180deg);
+}
+
+.profile-section-body {
+  margin-top: 12px;
 }
 
 .profile-section-note {

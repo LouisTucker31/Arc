@@ -1608,8 +1608,23 @@
 
   async function openProfile() {
     document.getElementById("profileEmail").textContent = currentSession ? currentSession.user.email : "";
+    closeAllProfileSections();
     await Promise.all([loadProfileIntoForm(), loadAndRenderRaces()]);
     goTo("profile");
+  }
+
+  /* All four sections start collapsed every time the Profile screen is
+     opened, rather than remembering what was expanded last time. */
+  function closeAllProfileSections() {
+    document.querySelectorAll(".profile-section").forEach((section) => {
+      section.classList.remove("is-open");
+      section.querySelector(".profile-section-body").hidden = true;
+    });
+  }
+
+  function toggleProfileSection(section) {
+    const isOpen = section.classList.toggle("is-open");
+    section.querySelector(".profile-section-body").hidden = !isOpen;
   }
 
   async function loadProfileIntoForm() {
@@ -2009,6 +2024,9 @@
     document.getElementById("addRaceBtn").addEventListener("click", () => openRaceDialog(null));
     document.getElementById("raceSaveBtn").addEventListener("click", handleSaveRace);
     document.getElementById("raceDeleteBtn").addEventListener("click", handleDeleteRace);
+    document.querySelectorAll(".profile-section-toggle").forEach((toggle) => {
+      toggle.addEventListener("click", () => toggleProfileSection(toggle.closest(".profile-section")));
+    });
 
     document.getElementById("completeWorkoutBtn").addEventListener("click", openLog);
     document.getElementById("saveWorkoutBtn").addEventListener("click", handleSaveWorkout);
