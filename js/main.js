@@ -1814,7 +1814,7 @@
     closeAllProfileSections();
     await Promise.all([loadProfileIntoForm(), loadAndRenderRaces()]);
     await refreshHistoryData();
-    renderPersonalBests();
+    await renderPersonalBests();
     goTo("profile");
   }
 
@@ -1897,23 +1897,49 @@
     return items;
   }
 
-  function renderPersonalBests() {
+  /* Computed-from-logs time for one slot, in seconds, or null if
+     nothing logged yet implies a time for it. */
+  function computedPbSeconds(slot, items) {
+    const paces = items
+      .filter((item) => item.sport === slot.sport)
+      .map((item) => paceSecondsPerUnitForEntry(item))
+      .filter((pace) => pace !== null && pace > 0);
+    if (paces.length === 0) return null;
+    const bestPace = Math.min(...paces);
+    const targetInSportUnit = slot.sport === "swim" ? slot.distance / 100 : slot.distance;
+    return bestPace * targetInSportUnit;
+  }
+
+  /* Each tile shows whichever is faster: a manually-set override (from
+     before this app existed) or the time the logged history computes.
+     If the computed time is now faster than a stored override, that
+     override has been beaten - it's dropped from pbOverrides and
+     persisted as cleared, so a once-manual PB doesn't linger after a
+     real logged workout has genuinely surpassed it. */
+  async function renderPersonalBests() {
     const items = flattenLoggableItems();
+    let overridesChanged = false;
     PB_SLOTS.forEach((slot) => {
       const el = document.getElementById(slot.id);
-      const paces = items
-        .filter((item) => item.sport === slot.sport)
-        .map((item) => paceSecondsPerUnitForEntry(item))
-        .filter((pace) => pace !== null && pace > 0);
-      if (paces.length === 0) {
-        el.textContent = "-";
-        return;
+      const computed = computedPbSeconds(slot, items);
+      const override = pbOverrides[slot.id];
+      let best = null;
+      if (override !== undefined && override !== null) {
+        if (computed !== null && computed < override) {
+          delete pbOverrides[slot.id];
+          overridesChanged = true;
+          best = computed;
+        } else {
+          best = override;
+        }
+      } else {
+        best = computed;
       }
-      const bestPace = Math.min(...paces);
-      const targetInSportUnit = slot.sport === "swim" ? (slot.distance / 100) : slot.distance;
-      const estimatedSeconds = bestPace * targetInSportUnit;
-      el.textContent = formatDurationSeconds(estimatedSeconds);
+      el.textContent = best === null ? "-" : formatDurationSeconds(best);
     });
+    if (overridesChanged && currentSession) {
+      await savePbOverrides(currentSession.user.id, pbOverrides);
+    }
   }
 
   function toggleProfileSection(section) {
@@ -1921,9 +1947,12 @@
     section.querySelector(".profile-section-body").hidden = !isOpen;
   }
 
+  let pbOverrides = {};
+
   async function loadProfileIntoForm() {
     if (!currentSession) return;
     const profile = await loadProfile(currentSession.user.id);
+    pbOverrides = (profile && profile.pb_overrides) || {};
     const name = profile ? profile.name : "";
     document.getElementById("profileName").textContent = name || "Your name";
     document.getElementById("profileNameInput").value = name || "";
@@ -2040,6 +2069,38 @@
     await deleteRace(editingRaceId);
     document.getElementById("raceDialog").close();
     await loadAndRenderRaces();
+  }
+
+  /* Which PB slot the override dialog is currently editing - set by
+     openPbOverrideDialog, read by handleSavePbOverride/
+     handleClearPbOverride. */
+  let editingPbSlotId = null;
+
+  function openPbOverrideDialog(slotId, label) {
+    editingPbSlotId = slotId;
+    document.getElementById("pbOverrideDialogTitle").textContent = "Set PB - " + label;
+    const existingSeconds = pbOverrides[slotId];
+    writeTimeGroupSeconds("pbOverrideTimeGroup", existingSeconds === undefined ? null : existingSeconds);
+    document.getElementById("pbOverrideDeleteRow").hidden = existingSeconds === undefined || existingSeconds === null;
+    document.getElementById("pbOverrideDialog").showModal();
+  }
+
+  async function handleSavePbOverride() {
+    if (!editingPbSlotId || !currentSession) return;
+    const seconds = readTimeGroupSeconds("pbOverrideTimeGroup");
+    if (seconds === null || seconds <= 0) return;
+    pbOverrides[editingPbSlotId] = seconds;
+    await savePbOverrides(currentSession.user.id, pbOverrides);
+    document.getElementById("pbOverrideDialog").close();
+    await renderPersonalBests();
+  }
+
+  async function handleClearPbOverride() {
+    if (!editingPbSlotId || !currentSession) return;
+    delete pbOverrides[editingPbSlotId];
+    await savePbOverrides(currentSession.user.id, pbOverrides);
+    document.getElementById("pbOverrideDialog").close();
+    await renderPersonalBests();
   }
 
   /* ------------------------------------------------------------------
@@ -2272,6 +2333,7 @@
     buildTimeInputGroup(document.getElementById("durationInputGroup"), 3);
     buildTimeInputGroup(document.getElementById("legOneDurationGroup"), 3);
     buildTimeInputGroup(document.getElementById("legTwoDurationGroup"), 3);
+    buildTimeInputGroup(document.getElementById("pbOverrideTimeGroup"), 3);
 
     updateSigninModeUI();
     document.getElementById("signinSubmitBtn").addEventListener("click", handleSigninSubmit);
@@ -2325,6 +2387,11 @@
     document.querySelectorAll(".profile-section-toggle, .profile-section-chevron-btn").forEach((toggle) => {
       toggle.addEventListener("click", () => toggleProfileSection(toggle.closest(".profile-section")));
     });
+    document.querySelectorAll(".pb-item").forEach((item) => {
+      item.addEventListener("click", () => openPbOverrideDialog(item.dataset.pbSlot, item.dataset.pbLabel));
+    });
+    document.getElementById("pbOverrideSaveBtn").addEventListener("click", handleSavePbOverride);
+    document.getElementById("pbOverrideClearBtn").addEventListener("click", handleClearPbOverride);
 
     document.getElementById("completeWorkoutBtn").addEventListener("click", openLog);
     document.getElementById("saveWorkoutBtn").addEventListener("click", handleSaveWorkout);

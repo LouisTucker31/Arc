@@ -410,14 +410,14 @@
           <p class="profile-section-note">Your fastest time at each distance, calculated automatically from your logged workouts.</p>
           <div class="profile-card">
             <div class="pb-grid">
-              <div class="pb-item"><span class="pb-item-label">Swim 400m</span><span class="pb-item-value" id="pbSwim400m">-</span></div>
-              <div class="pb-item"><span class="pb-item-label">Swim 1500m</span><span class="pb-item-value" id="pbSwim1500m">-</span></div>
-              <div class="pb-item"><span class="pb-item-label">Bike 20km</span><span class="pb-item-value" id="pbBike20km">-</span></div>
-              <div class="pb-item"><span class="pb-item-label">Bike 40km</span><span class="pb-item-value" id="pbBike40km">-</span></div>
-              <div class="pb-item"><span class="pb-item-label">Run 5km</span><span class="pb-item-value" id="pbRun5km">-</span></div>
-              <div class="pb-item"><span class="pb-item-label">Run 10km</span><span class="pb-item-value" id="pbRun10km">-</span></div>
-              <div class="pb-item"><span class="pb-item-label">Half Marathon</span><span class="pb-item-value" id="pbHalfMarathon">-</span></div>
-              <div class="pb-item"><span class="pb-item-label">Marathon</span><span class="pb-item-value" id="pbMarathon">-</span></div>
+              <button type="button" class="pb-item" data-pb-slot="pbSwim400m" data-pb-label="Swim 400m"><span class="pb-item-label">Swim 400m</span><span class="pb-item-value" id="pbSwim400m">-</span></button>
+              <button type="button" class="pb-item" data-pb-slot="pbSwim1500m" data-pb-label="Swim 1500m"><span class="pb-item-label">Swim 1500m</span><span class="pb-item-value" id="pbSwim1500m">-</span></button>
+              <button type="button" class="pb-item" data-pb-slot="pbBike20km" data-pb-label="Bike 20km"><span class="pb-item-label">Bike 20km</span><span class="pb-item-value" id="pbBike20km">-</span></button>
+              <button type="button" class="pb-item" data-pb-slot="pbBike40km" data-pb-label="Bike 40km"><span class="pb-item-label">Bike 40km</span><span class="pb-item-value" id="pbBike40km">-</span></button>
+              <button type="button" class="pb-item" data-pb-slot="pbRun5km" data-pb-label="Run 5km"><span class="pb-item-label">Run 5km</span><span class="pb-item-value" id="pbRun5km">-</span></button>
+              <button type="button" class="pb-item" data-pb-slot="pbRun10km" data-pb-label="Run 10km"><span class="pb-item-label">Run 10km</span><span class="pb-item-value" id="pbRun10km">-</span></button>
+              <button type="button" class="pb-item" data-pb-slot="pbHalfMarathon" data-pb-label="Half Marathon"><span class="pb-item-label">Half Marathon</span><span class="pb-item-value" id="pbHalfMarathon">-</span></button>
+              <button type="button" class="pb-item" data-pb-slot="pbMarathon" data-pb-label="Marathon"><span class="pb-item-label">Marathon</span><span class="pb-item-value" id="pbMarathon">-</span></button>
             </div>
           </div>
         </div>
@@ -525,6 +525,24 @@
     </div>
     <div class="dialog-actions dialog-actions--stacked">
       <button type="button" class="btn btn-primary" id="raceSaveBtn">Save</button>
+      <button type="submit" class="btn btn-secondary" value="close">Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="app-dialog" id="pbOverrideDialog">
+  <form method="dialog" class="dialog-form">
+    <h2 class="dialog-title" id="pbOverrideDialogTitle">Set PB</h2>
+    <p class="dialog-text">Set a personal best from before you started logging here. It'll be replaced automatically once a logged workout beats it.</p>
+
+    <label class="field-label">Time</label>
+    <div class="time-input-group" id="pbOverrideTimeGroup" data-segments="3"></div>
+
+    <div class="dialog-actions" id="pbOverrideDeleteRow" hidden>
+      <button type="button" class="btn btn-destructive" id="pbOverrideClearBtn">Clear</button>
+    </div>
+    <div class="dialog-actions dialog-actions--stacked">
+      <button type="button" class="btn btn-primary" id="pbOverrideSaveBtn">Save</button>
       <button type="submit" class="btn btn-secondary" value="close">Cancel</button>
     </div>
   </form>

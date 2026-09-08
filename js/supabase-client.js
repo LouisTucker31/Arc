@@ -97,6 +97,18 @@ async function saveProfile(userId, fields) {
   }
 }
 
+async function savePbOverrides(userId, pbOverrides) {
+  const { error } = await supabaseClient.from("profiles").upsert({
+    user_id: userId,
+    pb_overrides: pbOverrides,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) {
+    console.error("Could not save PB overrides", error);
+    throw error;
+  }
+}
+
 async function loadRaces(userId) {
   const { data, error } = await supabaseClient
     .from("races")
